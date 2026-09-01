@@ -8,15 +8,49 @@ data class Producto(
 )
 
 
+// Función para calcular subtotal
+fun calcularSubtotal(productos: List<Producto>): Double {
+
+    var subtotal = 0.0
+
+    for (p in productos) {
+
+        subtotal += p.precio * p.cantidad
+
+    }
+
+    return subtotal
+}
+
+
+// Función para calcular IGV
+fun calcularIGV(subtotal: Double): Double {
+
+    return subtotal * 0.18
+
+}
+
+
+// Función para calcular total
+fun calcularTotal(subtotal: Double, igv: Double): Double {
+
+    return subtotal + igv
+
+}
+
+
 fun main() {
+
 
     println("=========================================")
     println(" CARRITO DE COMPRAS - TIENDA TECSUP ")
     println("=========================================")
 
+
     val nombreCliente = "Michael Fernandez"
 
     val carrito = mutableListOf<Producto>()
+
 
     println("Cliente: $nombreCliente")
     println()
@@ -24,8 +58,7 @@ fun main() {
 
     carrito.add(Producto("Laptop HP", 2500.0, 1))
     carrito.add(Producto("Mouse Logitech", 45.5, 2))
-    carrito.add(Producto("Teclado Mecánico", 250.0, 1))
-    carrito.add(Producto("Monitor Samsung", 900.0, 1))
+    carrito.add(Producto("Audifonos Sony", 120.0, 1))
 
 
     for (producto in carrito) {
@@ -33,5 +66,24 @@ fun main() {
         println("Producto agregado: ${producto.nombre}")
 
     }
+
+
+    println()
+
+
+    val subtotal = calcularSubtotal(carrito)
+
+    val igv = calcularIGV(subtotal)
+
+    val total = calcularTotal(subtotal, igv)
+
+
+
+    println("Subtotal : S/ ${"%.2f".format(subtotal)}")
+
+    println("IGV (18%): S/ ${"%.2f".format(igv)}")
+
+    println("TOTAL    : S/ ${"%.2f".format(total)}")
+
 
 }
