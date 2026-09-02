@@ -1,6 +1,5 @@
 package com.fernandez.lab02carritokotlin
 
-
 data class Producto(
     val nombre: String,
     val precio: Double,
@@ -38,6 +37,30 @@ fun calcularTotal(subtotal: Double, igv: Double): Double {
 
 }
 
+fun mostrarDetalle(productos: List<Producto>) {
+    println("--------- DETALLE DEL CARRITO ---------")
+
+    var i = 1
+
+    for (p in productos) {
+
+        val importe = p.precio * p.cantidad
+
+        println(
+            String.format(
+                "%d. %-20s x%d S/ %8.2f",
+                i,
+                p.nombre,
+                p.cantidad,
+                importe
+            )
+        )
+
+        i++
+    }
+
+    println("---------------------------------------")
+}
 
 fun main() {
 
@@ -61,12 +84,12 @@ fun main() {
     carrito.add(Producto("Audifonos Sony", 120.0, 1))
 
 
-    for (producto in carrito) {
+    mostrarDetalle(carrito)
 
-        println("Producto agregado: ${producto.nombre}")
 
-    }
+    println()
 
+    println("Cantidad de productos: ${carrito.size}")
 
     println()
 
