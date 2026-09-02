@@ -65,4 +65,6 @@ data class Producto(
     val precio: Double,
     var cantidad: Int
 )
+```
+
 ![Resultado final](captura-final.png)
