@@ -5,66 +5,28 @@
 **Nombre:** Michael Fernandez
 
 
+## Prompt
+Actúa como profesor de Kotlin y ayúdame a transformar mi carrito de compras básico en una versión con POO. Estoy trabajando en la rama `con-ia` a partir de la rama `sin-ia`. Quiero mantener todo en un solo archivo `Carrito.kt` y con nivel de estudiante. Implementa clases, encapsulamiento, herencia, abstracción y polimorfismo: crea una clase abstracta `Producto` con dos categorías (`ProductoElectronico` y `ProductoRopa`), una clase `Carrito` para gestionar productos, una clase `Cliente`, una clase `Factura` para calcular subtotal, IGV, descuentos y total final. Además, modifica el `main` para agregar un menú interactivo por consola donde el usuario pueda mostrar catálogo, agregar productos, eliminar productos, ver carrito y ver resumen de compra. Explícame los cambios paso a paso y evita agregar funcionalidades innecesarias.
+
+
 ## Descripción del proyecto
 
 Este proyecto consiste en desarrollar un carrito de compras utilizando Kotlin mediante programación por consola.
 
-El programa permite registrar productos, calcular el subtotal de compra, calcular el IGV del 18%, obtener el total, mostrar un reporte detallado del carrito, identificar el producto más caro y aplicar descuentos según el monto total de compra.
+En esta versión se realizó una mejora aplicando Programación Orientada a Objetos (POO), implementando clases, herencia, abstracción y polimorfismo para organizar mejor la lógica del sistema.
+
+El programa permite gestionar un carrito de compras mediante un menú interactivo donde el usuario puede mostrar productos disponibles, agregar productos, eliminar productos y visualizar el resumen final de compra con IGV y descuentos.
 
 
-## Funciones implementadas
+## Programación Orientada a Objetos implementada
 
-Las funciones principales desarrolladas en el laboratorio son:
+### Clase abstracta Producto
 
-### calcularSubtotal()
-
-Calcula el subtotal de los productos multiplicando el precio por la cantidad de cada producto.
-
-### calcularIGV()
-
-Calcula el IGV correspondiente al 18% del subtotal.
-
-### calcularTotal()
-
-Obtiene el total de la compra sumando el subtotal más el IGV.
-
-### mostrarDetalle()
-
-Muestra los productos del carrito con cantidades e importes utilizando formato de columnas alineadas.
-
-### calcularDescuento()
-
-Aplica descuentos según el monto total utilizando la estructura de decisión `when`.
-
-- Más de S/ 5000 → descuento del 10%.
-- Más de S/ 3000 → descuento del 5%.
-- Menor o igual a S/ 3000 → sin descuento.
-
-
-### Producto más caro
-
-Se utiliza `maxByOrNull` para identificar el producto con mayor precio dentro del carrito.
-
-
-### Diferencia entre val y var
-
-En Kotlin:
-
-- val declara una variable cuyo valor no puede cambiar después de ser asignado.
-- var declara una variable cuyo valor sí puede modificarse.
-
----
-
-# Modelo de datos
-
-El producto fue representado mediante una `data class`:
+Se creó una clase base abstracta `Producto` que contiene los atributos principales del producto y define métodos que son implementados por sus clases hijas.
 
 ```kotlin
-data class Producto(
+abstract class Producto(
     val nombre: String,
     val precio: Double,
     var cantidad: Int
 )
-```
-
-![Resultado final](captura-final.png)
