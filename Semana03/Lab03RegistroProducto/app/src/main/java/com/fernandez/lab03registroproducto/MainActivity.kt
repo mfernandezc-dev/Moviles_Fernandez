@@ -94,11 +94,23 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
         Button(
             onClick = {
                 if (nombre.isBlank() || precio.isBlank() || cantidad.isBlank()) {
-                    mensajeError = "Todos los campos son obligatorios"
+
+                    mensajeError = "Complete nombre, precio y cantidad"
                     mostrarResumen = false
+
+                } else if (
+                    precio.toDoubleOrNull() == null ||
+                    cantidad.toIntOrNull() == null
+                ) {
+
+                    mensajeError = "Precio y cantidad deben ser números"
+                    mostrarResumen = false
+
                 } else {
+
                     mensajeError = ""
                     mostrarResumen = true
+
                 }
             },
             modifier = Modifier.fillMaxWidth()
