@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +52,7 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
     var precio by remember { mutableStateOf("") }
     var cantidad by remember { mutableStateOf("") }
     var mostrarResumen by remember { mutableStateOf(false) }
+    var mensajeError by remember { mutableStateOf("") }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -90,10 +92,43 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
         }
         Spacer(modifier = Modifier.height(24.dp))
         Button(
-            onClick = { mostrarResumen = true },
+            onClick = {
+                if (nombre.isBlank() || precio.isBlank() || cantidad.isBlank()) {
+                    mensajeError = "Todos los campos son obligatorios"
+                    mostrarResumen = false
+                } else {
+                    mensajeError = ""
+                    mostrarResumen = true
+                }
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("AGREGAR PRODUCTO")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = {
+                nombre = ""
+                precio = ""
+                cantidad = ""
+                mostrarResumen = false
+                mensajeError = ""
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("LIMPIAR")
+        }
+
+        if (mensajeError.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = mensajeError,
+                color = Color.Red,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -137,7 +172,7 @@ fun PantallaRegistro(modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.bodyMedium
             )
-        } else {
+        } else if (mensajeError.isEmpty()) {
             // Mensaje inicial cuando aún no se presiona el botón
             Text(
                 text = "Aún no has registrado ningún producto",
