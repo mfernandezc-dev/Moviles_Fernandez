@@ -1,33 +1,24 @@
 package com.fernandez.navegacion.navigation
 
-// Clase sellada que actúa como contrato central de navegación.
-// Recibe "route" como parámetro = es el identificador único de cada pantalla.
-// Al ser sealed, el compilador conoce todas las rutas posibles en tiempo de compilación.
-
 sealed class Screen(val route: String) {
 
-    // Pantalla de inicio - punto de entrada de la app
+    // Pantalla de inicio de sesión
+    object Login : Screen(route = "login")
+
+    // Pantalla de inicio / bienvenida
     object Home : Screen(route = "home")
 
-    // Pantalla que muestra la lista de elementos
+    // Pantalla de directorio de alumnos
     object List : Screen(route = "list")
 
-    // Pantalla del perfil del usuario
+    // Pantalla de expediente académico
     object Profile : Screen(route = "profile")
 
+    // Pantalla de configuración de perfil
+    object ProfileSettings : Screen(route = "profile_settings")
 
-    // -------------------------------------------------
-    // RUTA CON ARGUMENTO
-    // {itemId} es el placeholder que Navigation reemplaza
-    // con el valor real al momento de navegar.
-    // -------------------------------------------------
-
+    // Ruta con argumento para detalle de alumno
     object Detail : Screen(route = "detail/{itemId}") {
-
-        // Construye la ruta final sustituyendo el placeholder
-        // por el valor real recibido.
-        // Ejemplo: createRoute(5) devuelve "detail/5".
-        // Este String es el que se pasa a navController.navigate(...)
         fun createRoute(itemId: Int): String {
             return "detail/$itemId"
         }

@@ -9,40 +9,44 @@ import androidx.navigation.navArgument
 import com.fernandez.navegacion.screens.DetailScreen
 import com.fernandez.navegacion.screens.HomeScreen
 import com.fernandez.navegacion.screens.ListScreen
+import com.fernandez.navegacion.screens.LoginScreen
 import com.fernandez.navegacion.screens.ProfileScreen
+import com.fernandez.navegacion.screens.ProfileSettingsScreen
 
 @Composable
 fun AppNavigation() {
-
-    // Crea y mantiene el controlador de navegación
     val navController = rememberNavController()
 
-    // Contenedor del grafo de navegación
-    // startDestination define la pantalla inicial
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Login.route
     ) {
+        // Pantalla de Inicio de Sesión
+        composable(Screen.Login.route) {
+            LoginScreen(navController)
+        }
 
-        // Pantalla inicial
+        // Pantalla de Inicio / Bienvenida
         composable(Screen.Home.route) {
             HomeScreen(navController)
         }
 
-
-        // Pantalla de lista
+        // Pantalla del Directorio de Alumnos
         composable(Screen.List.route) {
             ListScreen(navController)
         }
 
-
-        // Pantalla de perfil
+        // Pantalla de Expediente Académico
         composable(Screen.Profile.route) {
             ProfileScreen(navController)
         }
 
+        // Pantalla de Configuración de Perfil
+        composable(Screen.ProfileSettings.route) {
+            ProfileSettingsScreen(navController)
+        }
 
-        // Ruta con argumento
+        // Ruta con argumento (Detalle de Alumno)
         composable(
             route = Screen.Detail.route,
             arguments = listOf(
@@ -52,9 +56,7 @@ fun AppNavigation() {
                 }
             )
         ) { backStackEntry ->
-
             val itemId = backStackEntry.arguments?.getInt("itemId") ?: 0
-
             DetailScreen(navController, itemId)
         }
     }
