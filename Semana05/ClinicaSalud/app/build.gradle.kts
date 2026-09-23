@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "com.fernandez.clinicasalud"
     compileSdk {
-        version = release(36) {
+        version = release(37) {
             minorApiLevel = 1
         }
     }
@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
