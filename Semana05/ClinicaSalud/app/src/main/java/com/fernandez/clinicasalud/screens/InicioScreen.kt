@@ -14,11 +14,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.fernandez.clinicasalud.model.Medico
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InicioScreen() {
+fun InicioScreen(
+    navController: NavController
+) {
 
     val especialidades = listOf(
         "Cardiología",
