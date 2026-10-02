@@ -37,12 +37,26 @@ fun PantallaCarrito() {
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                Text(
-                    text = "TECSUP Store",
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Column {
+                        Text(
+                            text = "TECSUP Store",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Menú Principal",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
                 HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
                     label = { Text("Carrito") },
@@ -50,7 +64,8 @@ fun PantallaCarrito() {
                     onClick = {
                         itemSeleccionado = "Carrito"
                         scope.launch { drawerState.close() }
-                    }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
 
                 NavigationDrawerItem(
@@ -60,7 +75,8 @@ fun PantallaCarrito() {
                     onClick = {
                         itemSeleccionado = "AcercaDe"
                         scope.launch { drawerState.close() }
-                    }
+                    },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }
         }
