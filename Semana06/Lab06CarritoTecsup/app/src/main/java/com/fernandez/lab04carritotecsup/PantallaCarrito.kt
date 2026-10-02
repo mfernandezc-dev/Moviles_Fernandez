@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 fun PantallaCarrito() {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var itemSeleccionado by remember { mutableStateOf("Carrito") }
 
     var nombre by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
@@ -36,16 +38,29 @@ fun PantallaCarrito() {
         drawerContent = {
             ModalDrawerSheet {
                 Text(
-                    text = "Menú",
+                    text = "TECSUP Store",
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.titleMedium
                 )
                 HorizontalDivider()
                 NavigationDrawerItem(
                     icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
-                    label = { Text("Carrito de Compras") },
-                    selected = true,
-                    onClick = { scope.launch { drawerState.close() } }
+                    label = { Text("Carrito") },
+                    selected = itemSeleccionado == "Carrito",
+                    onClick = {
+                        itemSeleccionado = "Carrito"
+                        scope.launch { drawerState.close() }
+                    }
+                )
+
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                    label = { Text("Acerca de") },
+                    selected = itemSeleccionado == "AcercaDe",
+                    onClick = {
+                        itemSeleccionado = "AcercaDe"
+                        scope.launch { drawerState.close() }
+                    }
                 )
             }
         }
@@ -53,21 +68,21 @@ fun PantallaCarrito() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Mi Carrito") },
+                    title = { Text(if (itemSeleccionado == "Carrito") "Carrito Tecsup" else "Acerca de") },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Abrir menú")
+                            Icon(Icons.Default.Menu, contentDescription = "MENU")
                         }
                     }
                 )
             }
         ) { innerPadding ->
-            // Mueve todo tu contenido dentro de este Box con el innerPadding
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
+                if (itemSeleccionado == "Carrito") {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -246,6 +261,14 @@ fun PantallaCarrito() {
 
                     }
 
+                }
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("TECSUP Store v1.0")
+                    }
                 }
             }
         }
