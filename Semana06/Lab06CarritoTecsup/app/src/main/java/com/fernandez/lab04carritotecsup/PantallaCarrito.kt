@@ -242,18 +242,19 @@ fun TarjetaProducto(
                     )
                 }
 
-                DropdownMenu(
-                    expanded = menuExpandido,
-                    onDismissRequest = { menuExpandido = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Eliminar") },
-                        onClick = {
-                            menuExpandido = false
-                            onEliminar()
-                        }
-                    )
-                }
+                DropdownMenuItem(
+                    text = { Text("Eliminar") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar producto"
+                        )
+                    },
+                    onClick = {
+                        menuExpandido = false
+                        onEliminar()
+                    }
+                )
             }
         }
     }
