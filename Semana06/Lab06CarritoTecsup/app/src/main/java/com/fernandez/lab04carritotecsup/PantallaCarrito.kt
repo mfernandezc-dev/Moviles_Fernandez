@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -209,49 +210,38 @@ fun TarjetaProducto(
     producto: Producto,
     onEliminar: () -> Unit
 ) {
+    // Estado para controlar la visibilidad del menú contextual
+    var menuExpandido by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
-
         Row(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth(),
-
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = producto.nombre
-                )
-                Text(
-                    text = "S/ ${producto.precio} x ${producto.cantidad}"
-                )
+                Text(text = producto.nombre)
+                Text(text = "S/ ${producto.precio} x ${producto.cantidad}")
             }
-
 
             Text(
-                text = "S/ %.2f".format(
-                    producto.precio * producto.cantidad
-                )
+                text = "S/ %.2f".format(producto.precio * producto.cantidad)
             )
 
+            // Ícono de tres puntos
             IconButton(
-                onClick = onEliminar
+                onClick = { menuExpandido = !menuExpandido }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar"
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "Opciones"
                 )
-
             }
-
         }
-
     }
-
 }
