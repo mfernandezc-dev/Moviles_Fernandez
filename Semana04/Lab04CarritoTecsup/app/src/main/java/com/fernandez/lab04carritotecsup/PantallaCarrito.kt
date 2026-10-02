@@ -1,15 +1,13 @@
 package com.fernandez.lab04carritotecsup
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 @Composable
@@ -58,5 +56,102 @@ fun PantallaCarrito() {
 
         }
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            onClick = {
+                val precioNum = precio.toDoubleOrNull() ?: 0.0
+                val cantidadNum = cantidad.toIntOrNull() ?: 0
+                if (nombre.isNotBlank() && precioNum > 0 && cantidadNum > 0) {
+                    productos.add(
+                        Producto(
+                            nombre,
+                            precioNum,
+                            cantidadNum
+                        )
+                    )
+                    nombre = ""
+                    precio = ""
+                    cantidad = ""
+                }
+
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("AGREGAR")
+        }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+
+            items(productos) { producto ->
+
+                TarjetaProducto(
+                    producto = producto,
+                    onEliminar = {
+                        productos.remove(producto)
+                    }
+                )
+
+            }
+
+        }
+
     }
+}
+
+@Composable
+fun TarjetaProducto(
+    producto: Producto,
+    onEliminar: () -> Unit
+) {
+
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = producto.nombre
+                )
+                Text(
+                    text = "S/ ${producto.precio} x ${producto.cantidad}"
+                )
+            }
+
+
+            Text(
+                text = "S/ %.2f".format(
+                    producto.precio * producto.cantidad
+                )
+            )
+
+            IconButton(
+                onClick = onEliminar
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Eliminar"
+                )
+
+            }
+
+        }
+
+    }
+
 }
