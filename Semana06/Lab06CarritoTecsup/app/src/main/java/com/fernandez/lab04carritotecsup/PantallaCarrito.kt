@@ -234,13 +234,26 @@ fun TarjetaProducto(
             )
 
             // Ícono de tres puntos
-            IconButton(
-                onClick = { menuExpandido = !menuExpandido }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MoreVert,
-                    contentDescription = "Opciones"
-                )
+            Box {
+                IconButton(onClick = { menuExpandido = true }) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Opciones"
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = menuExpandido,
+                    onDismissRequest = { menuExpandido = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Eliminar") },
+                        onClick = {
+                            menuExpandido = false
+                            onEliminar()
+                        }
+                    )
+                }
             }
         }
     }
