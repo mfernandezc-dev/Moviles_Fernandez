@@ -28,7 +28,7 @@ object DatosIniciales {
             ),
             Producto(
                 nombre = "Menú del día",
-                descripcion = "Almuerzo completo",
+                descripcion = "Entrada + segundo + refresco. Cambia cada día según el menú de la cocina.",
                 categoria = "Comidas",
                 precio = 12.00,
                 icono = "plato"
