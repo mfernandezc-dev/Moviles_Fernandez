@@ -12,10 +12,30 @@ import com.fernandez.cafecampus.viewmodel.CafeViewModelFactory
 import com.fernandez.cafecampus.viewmodel.SesionViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import com.fernandez.cafecampus.viewmodel.MenuViewModel
+import com.fernandez.cafecampus.viewmodel.PedidosClienteViewModel
 
 class MainActivity : ComponentActivity() {
 
     private val sesionViewModel: SesionViewModel by viewModels {
+        val app = application as CafeApp
+
+        CafeViewModelFactory(
+            repository = CafeRepositoryRoom(app.database),
+            preferencias = PreferenciasStore(applicationContext)
+        )
+    }
+
+    private val menuViewModel: MenuViewModel by viewModels {
+        val app = application as CafeApp
+
+        CafeViewModelFactory(
+            repository = CafeRepositoryRoom(app.database),
+            preferencias = PreferenciasStore(applicationContext)
+        )
+    }
+
+    private val pedidosClienteViewModel: PedidosClienteViewModel by viewModels {
         val app = application as CafeApp
 
         CafeViewModelFactory(
@@ -36,7 +56,11 @@ class MainActivity : ComponentActivity() {
                 rol = perfil ?: "CLIENTE",
                 darkTheme = modoOscuro
             ) {
-                NavCafe(sesionViewModel)
+                NavCafe(
+                    vm = sesionViewModel,
+                    menuVm = menuViewModel,
+                    pedidosVm = pedidosClienteViewModel
+                )
             }
         }
     }

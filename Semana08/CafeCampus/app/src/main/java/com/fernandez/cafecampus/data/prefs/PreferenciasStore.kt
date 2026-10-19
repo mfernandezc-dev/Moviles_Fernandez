@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import androidx.datastore.preferences.core.intPreferencesKey
 
 // Una sola instancia de DataStore para la aplicación
 val Context.dataStore by preferencesDataStore(
@@ -26,6 +27,8 @@ class PreferenciasStore(
 
         private val RECIBIR_PEDIDOS =
             booleanPreferencesKey("recibirPedidos")
+
+        private val USUARIO_ID = intPreferencesKey("usuarioId")
     }
 
     // LECTURA DE PREFERENCIAS
@@ -44,6 +47,17 @@ class PreferenciasStore(
         context.dataStore.data.map { preferencias ->
             preferencias[RECIBIR_PEDIDOS] ?: true
         }
+
+    val usuarioId: Flow<Int?> =
+        context.dataStore.data.map { preferencias ->
+            preferencias[USUARIO_ID]
+        }
+
+    suspend fun guardarUsuarioId(id: Int) {
+        context.dataStore.edit { preferencias ->
+            preferencias[USUARIO_ID] = id
+        }
+    }
 
     // GUARDAR PERFIL
 
@@ -78,6 +92,7 @@ class PreferenciasStore(
     suspend fun cerrarSesion() {
         context.dataStore.edit { preferencias ->
             preferencias[PERFIL_ACTIVO] = ""
+            preferencias.remove(USUARIO_ID)
         }
     }
 }

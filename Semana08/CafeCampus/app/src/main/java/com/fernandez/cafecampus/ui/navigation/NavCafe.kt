@@ -19,25 +19,36 @@ import com.fernandez.cafecampus.ui.components.ClienteBottomBar
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.fernandez.cafecampus.ui.cliente.DetalleProductoScreen
+import com.fernandez.cafecampus.viewmodel.PedidosClienteViewModel
+import com.fernandez.cafecampus.ui.cliente.ConfirmarPedidoScreen
+import com.fernandez.cafecampus.ui.cliente.MisPedidosScreen
+import com.fernandez.cafecampus.ui.cliente.SeguimientoScreen
 
 @Composable
 fun NavCafe(
     vm: SesionViewModel,
-    menuVm: MenuViewModel
+    menuVm: MenuViewModel,
+    pedidosVm: PedidosClienteViewModel
 ) {
 
     val navController = rememberNavController()
     val perfil by vm.perfilActivo.collectAsState()
+    val usuarioId by vm.usuarioId.collectAsState()
+
+    LaunchedEffect(usuarioId) {
+        pedidosVm.establecerCliente(usuarioId)
+    }
+
 
     LaunchedEffect(perfil) {
         if (perfil == "") {
             val rutaActual = navController.currentDestination?.route
 
-            if (rutaActual == Rutas.MENU_CLIENTE ||
-                rutaActual == Rutas.PANEL_ADMIN) {
+            if (rutaActual != Rutas.LOGIN &&
+                rutaActual != Rutas.SPLASH) {
 
                 navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.MENU_CLIENTE) {
+                    popUpTo(navController.graph.id) {
                         inclusive = true
                     }
                     launchSingleTop = true
@@ -45,6 +56,7 @@ fun NavCafe(
             }
         }
     }
+
 
     fun destino(rol: String?): String = when (rol) {
         "CLIENTE" -> Rutas.MENU_CLIENTE
@@ -56,6 +68,48 @@ fun NavCafe(
         navController = navController,
         startDestination = Rutas.SPLASH
     ) {
+
+        composable(Rutas.CONFIRMAR_PEDIDO) {
+
+            val carrito by menuVm.carrito.collectAsState()
+            val confirmando by pedidosVm.confirmando.collectAsState()
+            val error by pedidosVm.error.collectAsState()
+            val pedidoCreado by pedidosVm.pedidoCreado.collectAsState()
+
+
+            LaunchedEffect(pedidoCreado) {
+                pedidoCreado?.let { id ->
+                    menuVm.vaciar()
+                    pedidosVm.pedidoCreadoConsumido()
+
+                    navController.navigate(
+                        Rutas.seguimiento(id.toInt())
+                    ) {
+                        popUpTo(Rutas.CONFIRMAR_PEDIDO) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                }
+            }
+
+            ConfirmarPedidoScreen(
+                items = carrito,
+                confirmando = confirmando,
+                error = error,
+                onConfirmar = { hora, pago, nota ->
+                    pedidosVm.confirmar(
+                        items = carrito,
+                        horaRecojo = hora,
+                        pago = pago,
+                        nota = nota
+                    )
+                },
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
 
         composable(Rutas.SPLASH) {
             LaunchedEffect(perfil) {
@@ -101,7 +155,9 @@ fun NavCafe(
                             // Ya estamos en el menú
                         },
                         onPedidos = {
-                            // Se implementará en el Paso 8
+                            navController.navigate(Rutas.MIS_PEDIDOS) {
+                                launchSingleTop = true
+                            }
                         },
                         onPerfil = {
                             // Pantalla de perfil pendiente
@@ -113,14 +169,21 @@ fun NavCafe(
                 Box(
                     modifier = Modifier.padding(innerPadding)
                 ) {
+
                     MenuScreen(
                         vm = menuVm,
                         onProducto = { productoId ->
                             navController.navigate(
                                 Rutas.detalleProducto(productoId)
                             )
+                        },
+                        onCarrito = {
+                            navController.navigate(
+                                Rutas.CONFIRMAR_PEDIDO
+                            )
                         }
                     )
+
                 }
             }
         }
@@ -192,6 +255,143 @@ fun NavCafe(
                 }
             }
         }
+
+
+        composable(
+            route = Rutas.SEGUIMIENTO,
+            arguments = listOf(
+                navArgument("pedidoId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val pedidoId =
+                backStackEntry.arguments?.getInt("pedidoId") ?: 0
+
+            val flujoPedido = remember(pedidoId) {
+                pedidosVm.pedido(pedidoId)
+            }
+
+            val registro by flujoPedido.collectAsState()
+            val productos by menuVm.productos.collectAsState()
+
+            // Solo mostrar pedidos del usuario autenticado
+            val pedidoVisible = registro?.takeIf {
+                it.pedido.clienteId == usuarioId
+            }
+
+
+            if (pedidoVisible != null) {
+                val pedido = pedidoVisible.pedido
+
+                Scaffold(
+                    bottomBar = {
+                        ClienteBottomBar(
+                            seleccionado = "pedidos",
+                            onMenu = {
+                                navController.navigate(Rutas.MENU_CLIENTE) {
+                                    popUpTo(Rutas.MENU_CLIENTE) {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
+                            },
+                            onPedidos = {
+                                navController.navigate(Rutas.MIS_PEDIDOS) {
+                                    launchSingleTop = true
+                                }
+                            },
+                            onPerfil = {
+                                // Pendiente: pantalla Perfil
+                            }
+                        )
+                    }
+                ) { innerPadding ->
+                    Box(
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        val resumenReal = pedidoVisible.detalles.joinToString(" · ") { detalle ->
+                            val nombreProducto = productos
+                                .find { it.id == detalle.productoId }
+                                ?.nombre ?: "Producto"
+
+                            "${detalle.cantidad} x $nombreProducto"
+                        }
+                        SeguimientoScreen(
+                            pedidoId = pedido.id,
+                            estado = pedido.estado,
+                            horaRecojo = pedido.horaRecojo,
+                            total = pedido.total,
+                            resumen = resumenReal,
+                            onVolver = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
+                }
+
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Cargando pedido o pedido no disponible")
+                }
+            }
+
+        }
+
+
+        composable(Rutas.MIS_PEDIDOS) {
+
+            val pedidos by pedidosVm.misPedidos.collectAsState()
+            val productos by menuVm.productos.collectAsState()
+
+            Scaffold(
+                bottomBar = {
+                    ClienteBottomBar(
+                        seleccionado = "pedidos",
+                        onMenu = {
+                            navController.navigate(Rutas.MENU_CLIENTE) {
+                                popUpTo(Rutas.MENU_CLIENTE) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        onPedidos = {
+                            // Ya estamos en Mis pedidos
+                        },
+                        onPerfil = {
+                            // Pendiente: pantalla Perfil
+                        }
+                    )
+                }
+            ) { innerPadding ->
+
+                Box(
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+
+                    MisPedidosScreen(
+                        pedidos = pedidos,
+                        productos = productos,
+                        onPedido = { pedidoId ->
+                            navController.navigate(
+                                Rutas.seguimiento(pedidoId)
+                            )
+                        },
+                        onVolver = {
+                            navController.popBackStack()
+                        }
+                    )
+
+                }
+            }
+        }
+
+
 
     }
 }
