@@ -49,19 +49,28 @@ fun NavCafe(
     val perfil by vm.perfilActivo.collectAsState()
     val usuarioId by vm.usuarioId.collectAsState()
 
+
     LaunchedEffect(usuarioId) {
         pedidosVm.establecerCliente(usuarioId)
     }
 
 
+
     LaunchedEffect(perfil) {
-        if (perfil == "") {
+        val rutaDestino = when (perfil) {
+            "ADMIN" -> Rutas.PANEL_ADMIN
+            "CLIENTE" -> Rutas.MENU_CLIENTE
+            "" -> Rutas.LOGIN
+            else -> null
+        }
+
+        if (rutaDestino != null) {
             val rutaActual = navController.currentDestination?.route
 
-            if (rutaActual != Rutas.LOGIN &&
-                rutaActual != Rutas.SPLASH) {
-
-                navController.navigate(Rutas.LOGIN) {
+            if (rutaActual != rutaDestino &&
+                rutaActual != Rutas.SPLASH
+            ) {
+                navController.navigate(rutaDestino) {
                     popUpTo(navController.graph.id) {
                         inclusive = true
                     }
@@ -70,6 +79,7 @@ fun NavCafe(
             }
         }
     }
+
 
 
     fun destino(rol: String?): String = when (rol) {

@@ -1,3 +1,4 @@
+
 package com.fernandez.cafecampus.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -11,8 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+
 class SesionViewModel(
     private val repository: CafeRepository,
     private val preferencias: PreferenciasStore
@@ -54,7 +56,6 @@ class SesionViewModel(
         true
     )
 
-
     val usuarioId = preferencias.usuarioId.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
@@ -79,16 +80,55 @@ class SesionViewModel(
         }
     }
 
+    // Cambiar entre los usuarios de prueba sin volver al Login.
     fun cambiarPerfil() {
+        if (_cargando.value) return
+
         viewModelScope.launch {
-            preferencias.cerrarSesion()
-            _usuarioActual.value = null
+            _cargando.value = true
             _error.value = null
+
+            try {
+                val perfilDestino = if (perfilActivo.value == "ADMIN") {
+                    "CLIENTE"
+                } else {
+                    "ADMIN"
+                }
+
+                // Credenciales ficticias del laboratorio.
+                val correo = if (perfilDestino == "CLIENTE") {
+                    "michael@campus.test"
+                } else {
+                    "admin@cafe.test"
+                }
+
+                val clave = if (perfilDestino == "CLIENTE") {
+                    "1234"
+                } else {
+                    "admin"
+                }
+
+                val usuario = repository.login(correo, clave)
+
+                if (usuario == null || usuario.rol != perfilDestino) {
+                    _error.value =
+                        "No se encontró el usuario de práctica"
+                    return@launch
+                }
+
+                _usuarioActual.value = usuario
+
+                // Guardar primero el usuario y después el perfil.
+                preferencias.guardarUsuarioId(usuario.id)
+                preferencias.guardarPerfil(usuario.rol)
+
+            } catch (e: Exception) {
+                _error.value = "No se pudo cambiar de perfil"
+            } finally {
+                _cargando.value = false
+            }
         }
     }
-
-
-
 
     fun login(
         correo: String,
@@ -105,15 +145,20 @@ class SesionViewModel(
             _error.value = null
 
             try {
-                val usuario = repository.login(correo.trim(), clave)
+                val usuario = repository.login(
+                    correo.trim(),
+                    clave
+                )
 
                 when {
                     usuario == null -> {
-                        _error.value = "Correo o contraseña incorrectos"
+                        _error.value =
+                            "Correo o contraseña incorrectos"
                     }
 
                     usuario.rol != rolSeleccionado.name -> {
-                        _error.value = "El usuario no pertenece al perfil seleccionado"
+                        _error.value =
+                            "El usuario no pertenece al perfil seleccionado"
                     }
 
                     else -> {
@@ -121,7 +166,6 @@ class SesionViewModel(
                         preferencias.guardarUsuarioId(usuario.id)
                         preferencias.guardarPerfil(usuario.rol)
                     }
-
                 }
             } catch (e: Exception) {
                 _error.value = "No se pudo iniciar sesión"
@@ -135,6 +179,7 @@ class SesionViewModel(
         _error.value = null
     }
 
+    // Cerrar sesión sí debe regresar al Login.
     fun cerrarSesion() {
         viewModelScope.launch {
             preferencias.cerrarSesion()
