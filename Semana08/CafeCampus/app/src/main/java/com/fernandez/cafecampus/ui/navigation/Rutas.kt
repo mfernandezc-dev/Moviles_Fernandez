@@ -19,6 +19,15 @@ object Rutas {
     const val AJUSTES_ADMIN = "ajustes_admin"
     const val DETALLE_PEDIDO_ADMIN = "detalle_pedido_admin/{pedidoId}"
 
+    const val NUEVO_PRODUCTO = "nuevo_producto"
+
+    const val EDITAR_PRODUCTO = "editar_producto/{productoId}"
+
+    fun editarProducto(productoId: Int): String {
+        return "editar_producto/$productoId"
+    }
+
+
     fun detallePedidoAdmin(pedidoId: Int): String {
         return "detalle_pedido_admin/$pedidoId"
     }

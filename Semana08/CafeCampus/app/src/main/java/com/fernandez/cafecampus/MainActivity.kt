@@ -16,6 +16,7 @@ import com.fernandez.cafecampus.viewmodel.MenuViewModel
 import com.fernandez.cafecampus.viewmodel.PedidosClienteViewModel
 import com.fernandez.cafecampus.viewmodel.PanelAdminViewModel
 import com.fernandez.cafecampus.viewmodel.PedidosAdminViewModel
+import com.fernandez.cafecampus.viewmodel.MenuAdminViewModel
 import com.fernandez.cafecampus.ui.admin.PanelScreen
 import com.fernandez.cafecampus.ui.admin.PedidosAdminScreen
 import com.fernandez.cafecampus.ui.components.AdminBottomBar
@@ -69,6 +70,16 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val menuAdminViewModel: MenuAdminViewModel by viewModels {
+        val app = application as CafeApp
+
+        CafeViewModelFactory(
+            repository = CafeRepositoryRoom(app.database),
+            preferencias = PreferenciasStore(applicationContext)
+        )
+    }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +98,8 @@ class MainActivity : ComponentActivity() {
                     menuVm = menuViewModel,
                     pedidosVm = pedidosClienteViewModel,
                     panelAdminVm = panelAdminViewModel,
-                    pedidosAdminVm = pedidosAdminViewModel
+                    pedidosAdminVm = pedidosAdminViewModel,
+                    menuAdminVm = menuAdminViewModel
                 )
             }
         }

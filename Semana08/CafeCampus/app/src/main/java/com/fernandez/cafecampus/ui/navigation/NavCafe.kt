@@ -30,6 +30,9 @@ import com.fernandez.cafecampus.ui.admin.PedidosAdminScreen
 import com.fernandez.cafecampus.ui.components.AdminBottomBar
 import com.fernandez.cafecampus.model.EstadoPedido
 import com.fernandez.cafecampus.ui.admin.DetallePedidoAdminScreen
+import com.fernandez.cafecampus.viewmodel.MenuAdminViewModel
+import com.fernandez.cafecampus.ui.admin.MenuAdminScreen
+import com.fernandez.cafecampus.ui.admin.FormularioProductoScreen
 
 
 @Composable
@@ -38,7 +41,8 @@ fun NavCafe(
     menuVm: MenuViewModel,
     pedidosVm: PedidosClienteViewModel,
     panelAdminVm: PanelAdminViewModel,
-    pedidosAdminVm: PedidosAdminViewModel
+    pedidosAdminVm: PedidosAdminViewModel,
+    menuAdminVm: MenuAdminViewModel
 ) {
 
     val navController = rememberNavController()
@@ -223,7 +227,9 @@ fun NavCafe(
                             }
                         },
                         onMenu = {
-                            // Se implementará en el Paso 10
+                            navController.navigate(Rutas.MENU_ADMIN) {
+                                launchSingleTop = true
+                            }
                         },
                         onAjustes = {
                             // Se implementará en el Paso 11
@@ -263,6 +269,116 @@ fun NavCafe(
                 }
             }
         }
+
+
+        composable(Rutas.MENU_ADMIN) {
+
+            val productos by menuAdminVm.productos.collectAsState()
+
+            Scaffold(
+                bottomBar = {
+                    AdminBottomBar(
+                        seleccionado = "menu",
+                        onPanel = {
+                            navController.navigate(Rutas.PANEL_ADMIN) {
+                                popUpTo(Rutas.PANEL_ADMIN) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        onPedidos = {
+                            navController.navigate(Rutas.PEDIDOS_ADMIN) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onMenu = {},
+                        onAjustes = {
+                            // Paso 11
+                        }
+                    )
+                }
+            ) { innerPadding ->
+
+                Box(
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    MenuAdminScreen(
+                        productos = productos,
+                        onAgregar = {
+                            navController.navigate(Rutas.NUEVO_PRODUCTO)
+                        },
+                        onEditar = { productoId ->
+                            navController.navigate(
+                                Rutas.editarProducto(productoId)
+                            )
+                        },
+                        onEliminar = { producto ->
+                            menuAdminVm.eliminar(producto)
+                        },
+                        onDisponibilidad = { producto ->
+                            menuAdminVm.alternarDisponibilidad(producto)
+                        }
+                    )
+                }
+            }
+        }
+
+
+        composable(Rutas.NUEVO_PRODUCTO) {
+
+            FormularioProductoScreen(
+                producto = null,
+                onGuardar = { producto ->
+                    menuAdminVm.guardar(producto)
+                    navController.popBackStack()
+                },
+                onVolver = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+
+        composable(
+            route = Rutas.EDITAR_PRODUCTO,
+            arguments = listOf(
+                navArgument("productoId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val productoId =
+                backStackEntry.arguments?.getInt("productoId") ?: 0
+
+            val productos by menuAdminVm.productos.collectAsState()
+
+            val producto = productos.find {
+                it.id == productoId
+            }
+
+            if (producto != null) {
+                FormularioProductoScreen(
+                    producto = producto,
+                    onGuardar = { actualizado ->
+                        menuAdminVm.guardar(actualizado)
+                        navController.popBackStack()
+                    },
+                    onVolver = {
+                        navController.popBackStack()
+                    }
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
 
 
         composable(Rutas.PEDIDOS_ADMIN) {
