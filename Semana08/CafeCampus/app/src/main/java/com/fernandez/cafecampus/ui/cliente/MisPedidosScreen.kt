@@ -1,4 +1,3 @@
-
 package com.fernandez.cafecampus.ui.cliente
 
 import androidx.compose.foundation.BorderStroke
@@ -118,6 +117,7 @@ fun MisPedidosScreen(
     pedidos: List<PedidoConDetalle>,
     productos: List<Producto>,
     onPedido: (Int) -> Unit,
+    onRepetirPedido: (PedidoConDetalle) -> Unit = {},
     onVolver: () -> Unit
 ) {
     var pestana by remember { mutableIntStateOf(0) }
@@ -347,6 +347,29 @@ fun MisPedidosScreen(
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold
                                     )
+                                }
+
+                                // BOTÓN REPETIR PEDIDO (EN PESTAÑA HISTORIAL)
+                                if (pestana == 1) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Button(
+                                        onClick = { onRepetirPedido(registro) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(36.dp),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Naranja,
+                                            contentColor = Color.White
+                                        ),
+                                        contentPadding = PaddingValues(0.dp)
+                                    ) {
+                                        Text(
+                                            text = "Repetir pedido",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }

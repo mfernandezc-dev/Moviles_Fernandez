@@ -1,5 +1,7 @@
 package com.fernandez.cafecampus.ui.navigation
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -744,6 +746,7 @@ fun NavCafe(
 
             val pedidos by pedidosVm.misPedidos.collectAsState()
             val productos by menuVm.productos.collectAsState()
+            val context = LocalContext.current
 
             Scaffold(
                 bottomBar = {
@@ -778,6 +781,28 @@ fun NavCafe(
                             navController.navigate(
                                 Rutas.seguimiento(pedidoId)
                             )
+                        },
+                        onRepetirPedido = { registro ->
+                            menuVm.repetirPedido(registro) { agregados, omitidos ->
+                                if (omitidos > 0) {
+                                    Toast.makeText(
+                                        context,
+                                        "Algunos productos ya no están disponibles y fueron omitidos",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                                if (agregados > 0) {
+                                    navController.navigate(Rutas.CONFIRMAR_PEDIDO) {
+                                        launchSingleTop = true
+                                    }
+                                } else if (omitidos > 0) {
+                                    Toast.makeText(
+                                        context,
+                                        "Ningún producto del pedido está disponible actualmente",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            }
                         },
                         onVolver = {
                             navController.popBackStack()

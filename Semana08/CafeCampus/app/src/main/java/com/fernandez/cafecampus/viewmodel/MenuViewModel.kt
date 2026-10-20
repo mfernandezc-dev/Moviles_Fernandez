@@ -3,6 +3,7 @@ package com.fernandez.cafecampus.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fernandez.cafecampus.data.local.entity.Producto
+import com.fernandez.cafecampus.data.local.relation.PedidoConDetalle
 import com.fernandez.cafecampus.data.repository.CafeRepository
 import com.fernandez.cafecampus.model.ItemCarrito
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +11,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class MenuViewModel(
     private val repository: CafeRepository
@@ -90,6 +93,33 @@ class MenuViewModel(
                 cantidad = cantidad,
                 nota = nota
             )
+        }
+    }
+
+    // Repetir un pedido del historial
+    fun repetirPedido(
+        registro: PedidoConDetalle,
+        onResultado: (agregados: Int, omitidos: Int) -> Unit = { _, _ -> }
+    ) {
+        viewModelScope.launch {
+            val productosActuales = repository.observarProductos().first()
+            var agregados = 0
+            var omitidos = 0
+
+            registro.detalles.forEach { detalle ->
+                val productoActual = productosActuales.find { it.id == detalle.productoId }
+                if (productoActual != null && productoActual.disponible) {
+                    agregar(
+                        producto = productoActual,
+                        cantidad = detalle.cantidad
+                    )
+                    agregados++
+                } else {
+                    omitidos++
+                }
+            }
+
+            onResultado(agregados, omitidos)
         }
     }
 
