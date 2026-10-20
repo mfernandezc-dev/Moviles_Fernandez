@@ -12,6 +12,17 @@ object Rutas {
 
     const val SEGUIMIENTO = "seguimiento/{pedidoId}"
 
+    const val PEDIDOS_ADMIN = "pedidos_admin"
+
+    const val MENU_ADMIN = "menu_admin"
+
+    const val AJUSTES_ADMIN = "ajustes_admin"
+    const val DETALLE_PEDIDO_ADMIN = "detalle_pedido_admin/{pedidoId}"
+
+    fun detallePedidoAdmin(pedidoId: Int): String {
+        return "detalle_pedido_admin/$pedidoId"
+    }
+
     fun seguimiento(pedidoId: Int): String {
         return "seguimiento/$pedidoId"
     }

@@ -23,12 +23,22 @@ import com.fernandez.cafecampus.viewmodel.PedidosClienteViewModel
 import com.fernandez.cafecampus.ui.cliente.ConfirmarPedidoScreen
 import com.fernandez.cafecampus.ui.cliente.MisPedidosScreen
 import com.fernandez.cafecampus.ui.cliente.SeguimientoScreen
+import com.fernandez.cafecampus.viewmodel.PanelAdminViewModel
+import com.fernandez.cafecampus.viewmodel.PedidosAdminViewModel
+import com.fernandez.cafecampus.ui.admin.PanelScreen
+import com.fernandez.cafecampus.ui.admin.PedidosAdminScreen
+import com.fernandez.cafecampus.ui.components.AdminBottomBar
+import com.fernandez.cafecampus.model.EstadoPedido
+import com.fernandez.cafecampus.ui.admin.DetallePedidoAdminScreen
+
 
 @Composable
 fun NavCafe(
     vm: SesionViewModel,
     menuVm: MenuViewModel,
-    pedidosVm: PedidosClienteViewModel
+    pedidosVm: PedidosClienteViewModel,
+    panelAdminVm: PanelAdminViewModel,
+    pedidosAdminVm: PedidosAdminViewModel
 ) {
 
     val navController = rememberNavController()
@@ -181,6 +191,10 @@ fun NavCafe(
                             navController.navigate(
                                 Rutas.CONFIRMAR_PEDIDO
                             )
+                        },
+                        onCerrarSesion = {
+                            menuVm.vaciar()
+                            vm.cerrarSesion()
                         }
                     )
 
@@ -189,27 +203,182 @@ fun NavCafe(
         }
 
 
+
         composable(Rutas.PANEL_ADMIN) {
 
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+            val nuevos by panelAdminVm.nuevos.collectAsState()
+            val preparando by panelAdminVm.preparando.collectAsState()
+            val listos by panelAdminVm.listos.collectAsState()
+            val ventasHoy by panelAdminVm.ventasHoy.collectAsState()
+            val pedidosNuevos by panelAdminVm.pedidosNuevos.collectAsState()
 
-                Text("Panel de administración de CafeCampus")
+            Scaffold(
+                bottomBar = {
+                    AdminBottomBar(
+                        seleccionado = "panel",
+                        onPanel = {},
+                        onPedidos = {
+                            navController.navigate(Rutas.PEDIDOS_ADMIN) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onMenu = {
+                            // Se implementará en el Paso 10
+                        },
+                        onAjustes = {
+                            // Se implementará en el Paso 11
+                        }
+                    )
+                }
+            ) { innerPadding ->
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = {
-                        vm.cerrarSesion()
-                    }
+                Box(
+                    modifier = Modifier.padding(innerPadding)
                 ) {
-                    Text("Cerrar sesión")
+                    PanelScreen(
+                        nuevos = nuevos,
+                        preparando = preparando,
+                        listos = listos,
+                        ventasHoy = ventasHoy,
+                        pedidosNuevos = pedidosNuevos,
+                        // Contador temporal de pedidos activos
+                        cantidadPedidosHoy = nuevos + preparando + listos,
+                        onPreparar = { registro ->
+                            pedidosAdminVm.avanzar(registro)
+                        },
+
+                        onVerPedidos = {
+                            pedidosAdminVm.seleccionarEstado(
+                                EstadoPedido.RECIBIDO
+                            )
+
+                            navController.navigate(Rutas.PEDIDOS_ADMIN) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onCerrarSesion = {
+                            vm.cerrarSesion()
+                        }
+                    )
                 }
             }
         }
+
+
+        composable(Rutas.PEDIDOS_ADMIN) {
+
+            val estado by pedidosAdminVm.estadoSeleccionado.collectAsState()
+            val pedidos by pedidosAdminVm.pedidos.collectAsState()
+
+            Scaffold(
+                bottomBar = {
+                    AdminBottomBar(
+                        seleccionado = "pedidos",
+                        onPanel = {
+                            navController.navigate(Rutas.PANEL_ADMIN) {
+                                popUpTo(Rutas.PANEL_ADMIN) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        onPedidos = {},
+                        onMenu = {
+                            // Paso 10
+                        },
+                        onAjustes = {
+                            // Paso 11
+                        }
+                    )
+                }
+            ) { innerPadding ->
+
+                Box(
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+
+                    PedidosAdminScreen(
+                        estadoSeleccionado = estado,
+                        pedidos = pedidos,
+
+                        onEstado = { seleccionado ->
+                            pedidosAdminVm.seleccionarEstado(seleccionado)
+                        },
+
+                        onAvanzar = { registro ->
+                            pedidosAdminVm.avanzar(registro)
+                        },
+
+                        onCancelar = { registro ->
+                            pedidosAdminVm.cancelar(registro)
+                        },
+
+                        onDetalle = { pedidoId ->
+                            navController.navigate(
+                                Rutas.detallePedidoAdmin(pedidoId)
+                            )
+                        },
+
+                        onVolver = {
+                            navController.navigate(Rutas.PANEL_ADMIN) {
+                                popUpTo(Rutas.PANEL_ADMIN) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        }
+                    )
+
+                }
+            }
+        }
+
+
+        composable(
+            route = Rutas.DETALLE_PEDIDO_ADMIN,
+            arguments = listOf(
+                navArgument("pedidoId") {
+                    type = NavType.IntType
+                }
+            )
+        ) { backStackEntry ->
+
+            val pedidoId =
+                backStackEntry.arguments?.getInt("pedidoId") ?: 0
+
+            // Reutilizamos la consulta del pedido por ID.
+            val flujoPedido = remember(pedidoId) {
+                pedidosVm.pedido(pedidoId)
+            }
+
+            val registro by flujoPedido.collectAsState()
+
+            if (perfil == "ADMIN" && registro != null) {
+                val pedidoActual = registro!!
+
+                DetallePedidoAdminScreen(
+                    registro = pedidoActual,
+                    onVolver = {
+                        navController.popBackStack()
+                    },
+                    onAvanzar = {
+                        pedidosAdminVm.avanzar(pedidoActual)
+                    },
+                    onCancelar = {
+                        pedidosAdminVm.cancelar(pedidoActual)
+                    }
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Pedido no disponible")
+                }
+            }
+        }
+
+
 
 
         composable(

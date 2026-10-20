@@ -14,6 +14,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import com.fernandez.cafecampus.viewmodel.MenuViewModel
 import com.fernandez.cafecampus.viewmodel.PedidosClienteViewModel
+import com.fernandez.cafecampus.viewmodel.PanelAdminViewModel
+import com.fernandez.cafecampus.viewmodel.PedidosAdminViewModel
+import com.fernandez.cafecampus.ui.admin.PanelScreen
+import com.fernandez.cafecampus.ui.admin.PedidosAdminScreen
+import com.fernandez.cafecampus.ui.components.AdminBottomBar
+import com.fernandez.cafecampus.model.EstadoPedido
 
 class MainActivity : ComponentActivity() {
 
@@ -44,6 +50,26 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+
+    private val panelAdminViewModel: PanelAdminViewModel by viewModels {
+        val app = application as CafeApp
+
+        CafeViewModelFactory(
+            repository = CafeRepositoryRoom(app.database),
+            preferencias = PreferenciasStore(applicationContext)
+        )
+    }
+
+    private val pedidosAdminViewModel: PedidosAdminViewModel by viewModels {
+        val app = application as CafeApp
+
+        CafeViewModelFactory(
+            repository = CafeRepositoryRoom(app.database),
+            preferencias = PreferenciasStore(applicationContext)
+        )
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -59,7 +85,9 @@ class MainActivity : ComponentActivity() {
                 NavCafe(
                     vm = sesionViewModel,
                     menuVm = menuViewModel,
-                    pedidosVm = pedidosClienteViewModel
+                    pedidosVm = pedidosClienteViewModel,
+                    panelAdminVm = panelAdminViewModel,
+                    pedidosAdminVm = pedidosAdminViewModel
                 )
             }
         }
