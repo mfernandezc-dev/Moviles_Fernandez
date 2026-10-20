@@ -16,9 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fernandez.cafecampus.data.local.relation.PedidoConDetalle
+import com.fernandez.cafecampus.model.PedidosPorHora
 
 private val Indigo = Color(0xFF4F46E5)
 private val GrisBorde = Color(0xFFE5E7EB)
@@ -31,6 +33,7 @@ fun PanelScreen(
     listos: Int,
     ventasHoy: Double,
     pedidosNuevos: List<PedidoConDetalle>,
+    pedidosPorHora: List<PedidosPorHora> = emptyList(),
     onPreparar: (PedidoConDetalle) -> Unit,
     onVerPedidos: () -> Unit,
     cantidadPedidosHoy: Int,
@@ -165,16 +168,45 @@ fun PanelScreen(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.Bottom
-                    ) {
-                        BarraHora("8h", 3, 0.35f, Color(0xFFC7D2FE))
-                        BarraHora("9h", 6, 0.60f, Color(0xFFA5B4FC))
-                        BarraHora("10h", 9, 1.00f, Indigo)
-                        BarraHora("11h", 5, 0.55f, Color(0xFFC7D2FE))
-                        BarraHora("12h", 7, 0.75f, Color(0xFFA5B4FC))
+                    if (pedidosPorHora.isEmpty()) {
+                        Text(
+                            text = "No hay pedidos registrados hoy",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        val maxCantidad = pedidosPorHora.maxOf { it.cantidad }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.Bottom
+                        ) {
+                            pedidosPorHora.forEach { item ->
+                                val proporcion = if (maxCantidad > 0) {
+                                    item.cantidad.toFloat() / maxCantidad.toFloat()
+                                } else {
+                                    0f
+                                }
+
+                                val colorBarra = if (item.cantidad == maxCantidad && maxCantidad > 0) {
+                                    Indigo
+                                } else {
+                                    Color(0xFFA5B4FC)
+                                }
+
+                                BarraHora(
+                                    hora = "${item.hora}h",
+                                    valor = item.cantidad,
+                                    proporcion = maxOf(proporcion, 0.12f),
+                                    color = colorBarra
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -376,4 +408,3 @@ private fun BarraHora(
         )
     }
 }
-

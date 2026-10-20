@@ -3,6 +3,7 @@ package com.fernandez.cafecampus.data.local.dao
 import androidx.room.*
 import com.fernandez.cafecampus.data.local.entity.*
 import com.fernandez.cafecampus.data.local.relation.PedidoConDetalle
+import com.fernandez.cafecampus.model.PedidosPorHora
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -88,4 +89,18 @@ interface PedidoDao {
     fun cantidadPorEstado(
         estado: String
     ): Flow<Int>
+
+    @Query("""
+        SELECT CAST(strftime('%H', (fecha + :offsetMs) / 1000, 'unixepoch') AS INTEGER) AS hora,
+               COUNT(*) AS cantidad
+        FROM pedidos
+        WHERE fecha >= :inicioDia AND fecha < :finDia
+        GROUP BY hora
+        ORDER BY hora ASC
+    """)
+    fun observarPedidosPorHora(
+        inicioDia: Long,
+        finDia: Long,
+        offsetMs: Long
+    ): Flow<List<PedidosPorHora>>
 }

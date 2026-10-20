@@ -126,4 +126,12 @@ class CafeRepositoryRoom(
     ): Flow<Int> {
         return pedidoDao.cantidadPorEstado(estado.name)
     }
+
+    override fun observarPedidosPorHora(
+        inicioDia: Long,
+        finDia: Long,
+        offsetMs: Long
+    ): Flow<List<PedidosPorHora>> {
+        return pedidoDao.observarPedidosPorHora(inicioDia, finDia, offsetMs)
+    }
 }

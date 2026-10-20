@@ -262,6 +262,7 @@ fun NavCafe(
             val listos by panelAdminVm.listos.collectAsState()
             val ventasHoy by panelAdminVm.ventasHoy.collectAsState()
             val pedidosNuevos by panelAdminVm.pedidosNuevos.collectAsState()
+            val pedidosPorHora by panelAdminVm.pedidosPorHora.collectAsState()
 
             Scaffold(
                 bottomBar = {
@@ -296,6 +297,7 @@ fun NavCafe(
                         listos = listos,
                         ventasHoy = ventasHoy,
                         pedidosNuevos = pedidosNuevos,
+                        pedidosPorHora = pedidosPorHora,
                         // Contador temporal de pedidos activos
                         cantidadPedidosHoy = nuevos + preparando + listos,
                         onPreparar = { registro ->

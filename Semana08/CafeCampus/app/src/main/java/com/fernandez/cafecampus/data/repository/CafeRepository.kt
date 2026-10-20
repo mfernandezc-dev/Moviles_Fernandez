@@ -5,6 +5,7 @@ import com.fernandez.cafecampus.data.local.entity.Usuario
 import com.fernandez.cafecampus.data.local.relation.PedidoConDetalle
 import com.fernandez.cafecampus.model.EstadoPedido
 import com.fernandez.cafecampus.model.ItemCarrito
+import com.fernandez.cafecampus.model.PedidosPorHora
 import kotlinx.coroutines.flow.Flow
 
 interface CafeRepository {
@@ -61,4 +62,10 @@ interface CafeRepository {
     fun observarCantidadPorEstado(
         estado: EstadoPedido
     ): Flow<Int>
+
+    fun observarPedidosPorHora(
+        inicioDia: Long,
+        finDia: Long,
+        offsetMs: Long
+    ): Flow<List<PedidosPorHora>>
 }
