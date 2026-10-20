@@ -1,4 +1,3 @@
-
 package com.fernandez.cafecampus.ui.cliente
 
 import androidx.compose.foundation.layout.*
@@ -7,6 +6,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.*
@@ -18,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fernandez.cafecampus.ui.components.ProductoCard
 import com.fernandez.cafecampus.viewmodel.MenuViewModel
-import androidx.compose.material.icons.automirrored.filled.Logout
 
 @Composable
 fun MenuScreen(
@@ -28,11 +28,11 @@ fun MenuScreen(
     onCerrarSesion: () -> Unit
 ) {
     val productos by vm.productos.collectAsState()
+    val busqueda by vm.busqueda.collectAsState()
+    val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
     val carrito by vm.carrito.collectAsState()
 
     val cantidadCarrito = carrito.sumOf { it.cantidad }
-
-    var categoria by remember { mutableStateOf("Todo") }
 
     val categorias = listOf(
         "Todo",
@@ -40,21 +40,6 @@ fun MenuScreen(
         "Almuerzos",
         "Bebidas"
     )
-
-    val productosFiltrados = when (categoria) {
-        "Desayunos" -> productos.filter {
-            it.nombre.contains("Café", true) ||
-                    it.nombre.contains("Sándwich", true) ||
-                    it.nombre.contains("Empanada", true)
-        }
-        "Almuerzos" -> productos.filter {
-            it.nombre.contains("Menú", true)
-        }
-        "Bebidas" -> productos.filter {
-            it.categoria == "Bebidas"
-        }
-        else -> productos
-    }
 
     Column(
         modifier = Modifier
@@ -121,11 +106,10 @@ fun MenuScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // BUSCADOR VISUAL
+        // BUSCADOR EDITABLE
         OutlinedTextField(
-            value = "",
-            onValueChange = {},
-            readOnly = true,
+            value = busqueda,
+            onValueChange = { vm.actualizarBusqueda(it) },
             placeholder = {
                 Text("Buscar en el menú...")
             },
@@ -134,6 +118,16 @@ fun MenuScreen(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = null
                 )
+            },
+            trailingIcon = {
+                if (busqueda.isNotEmpty()) {
+                    IconButton(onClick = { vm.actualizarBusqueda("") }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Limpiar búsqueda"
+                        )
+                    }
+                }
             },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
@@ -151,8 +145,8 @@ fun MenuScreen(
             categorias.forEach { opcion ->
 
                 FilterChip(
-                    selected = categoria == opcion,
-                    onClick = { categoria = opcion },
+                    selected = categoriaSeleccionada == opcion,
+                    onClick = { vm.seleccionarCategoria(opcion) },
                     label = {
                         Text(
                             text = opcion,
@@ -183,23 +177,38 @@ fun MenuScreen(
 
         Spacer(Modifier.height(12.dp))
 
-        // PRODUCTOS
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
-        ) {
-            items(
-                productosFiltrados,
-                key = { it.id }
-            ) { producto ->
-                ProductoCard(
-                    producto = producto,
-                    onClick = {
-                        onProducto(producto.id)
-                    }
+        // PRODUCTOS O MENSAJE DE LISTA VACÍA
+        if (productos.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No se encontraron productos",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(
+                    productos,
+                    key = { it.id }
+                ) { producto ->
+                    ProductoCard(
+                        producto = producto,
+                        onClick = {
+                            onProducto(producto.id)
+                        }
+                    )
+                }
             }
         }
     }
