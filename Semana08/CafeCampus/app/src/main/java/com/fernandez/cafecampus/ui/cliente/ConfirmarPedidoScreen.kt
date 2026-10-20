@@ -31,6 +31,7 @@ private val Negro = Color(0xFF111827)
 fun ConfirmarPedidoScreen(
     items: List<ItemCarrito>,
     confirmando: Boolean,
+    recibirPedidos: Boolean,
     error: String?,
     onConfirmar: (String, String, String) -> Unit,
     onVolver: () -> Unit
@@ -85,7 +86,7 @@ fun ConfirmarPedidoScreen(
                         onClick = {
                             onConfirmar(horaRecojo, pago, "")
                         },
-                        enabled = items.isNotEmpty() && !confirmando,
+                        enabled = items.isNotEmpty() && !confirmando && recibirPedidos,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -95,7 +96,11 @@ fun ConfirmarPedidoScreen(
                         )
                     ) {
                         Text(
-                            text = if (confirmando) "Confirmando..." else "Confirmar pedido",
+                            text = when {
+                                !recibirPedidos -> "Cafetería cerrada"
+                                confirmando -> "Confirmando..."
+                                else -> "Confirmar pedido"
+                            },
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -129,6 +134,21 @@ fun ConfirmarPedidoScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+
+            if (!recibirPedidos) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFEE2E2)
+                ) {
+                    Text(
+                        text = "La cafetería está cerrada. No se aceptan pedidos por el momento.",
+                        color = Color(0xFFB91C1C),
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
+            }
 
             // CONTENEDOR DE PRODUCTOS
             Surface(

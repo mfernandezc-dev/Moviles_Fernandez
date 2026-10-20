@@ -31,6 +31,20 @@ class PreferenciasStore(
         private val USUARIO_ID = intPreferencesKey("usuarioId")
     }
 
+
+    private val CLAVE_NOTIFICACIONES =
+        booleanPreferencesKey("notificaciones")
+
+    val notificaciones = context.dataStore.data.map { preferencias ->
+        preferencias[CLAVE_NOTIFICACIONES] ?: true
+    }
+
+    suspend fun guardarNotificaciones(activado: Boolean) {
+        context.dataStore.edit { preferencias ->
+            preferencias[CLAVE_NOTIFICACIONES] = activado
+        }
+    }
+
     // LECTURA DE PREFERENCIAS
 
     val perfilActivo: Flow<String> =

@@ -42,11 +42,52 @@ class SesionViewModel(
         false
     )
 
+    val recibirPedidos = preferencias.recibirPedidos.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        true
+    )
+
+    val notificaciones = preferencias.notificaciones.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        true
+    )
+
+
     val usuarioId = preferencias.usuarioId.stateIn(
         viewModelScope,
         SharingStarted.Eagerly,
         null
     )
+
+    fun cambiarModoOscuro(activado: Boolean) {
+        viewModelScope.launch {
+            preferencias.guardarModoOscuro(activado)
+        }
+    }
+
+    fun cambiarNotificaciones(activado: Boolean) {
+        viewModelScope.launch {
+            preferencias.guardarNotificaciones(activado)
+        }
+    }
+
+    fun cambiarRecibirPedidos(activado: Boolean) {
+        viewModelScope.launch {
+            preferencias.guardarRecibirPedidos(activado)
+        }
+    }
+
+    fun cambiarPerfil() {
+        viewModelScope.launch {
+            preferencias.cerrarSesion()
+            _usuarioActual.value = null
+            _error.value = null
+        }
+    }
+
+
 
 
     fun login(

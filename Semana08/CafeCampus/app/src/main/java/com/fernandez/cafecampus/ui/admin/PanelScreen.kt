@@ -1,4 +1,3 @@
-
 package com.fernandez.cafecampus.ui.admin
 
 import androidx.compose.foundation.BorderStroke
@@ -34,7 +33,6 @@ fun PanelScreen(
     pedidosNuevos: List<PedidoConDetalle>,
     onPreparar: (PedidoConDetalle) -> Unit,
     onVerPedidos: () -> Unit,
-    onCerrarSesion: () -> Unit,
     cantidadPedidosHoy: Int,
 ) {
     LazyColumn(
@@ -72,20 +70,6 @@ fun PanelScreen(
                         contentDescription = "Notificaciones",
                         tint = Negro
                     )
-                }
-            }
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                OutlinedButton(
-                    onClick = onCerrarSesion,
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Text("Cerrar sesión")
                 }
             }
         }
@@ -154,7 +138,7 @@ fun PanelScreen(
                     }
 
                     Text(
-                        text = "$cantidadPedidosHoy activos",
+                        text = "$cantidadPedidosHoy pedidos",
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -195,7 +179,6 @@ fun PanelScreen(
                 }
             }
         }
-
 
         // ENCABEZADO DE PEDIDOS
         item {
@@ -274,30 +257,36 @@ fun PanelScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Column(
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(5.dp)
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "#${pedido.id.toString().padStart(4, '0')} ${registro.cliente.nombre}",
+                                text = "Pedido #${
+                                    pedido.id.toString().padStart(4, '0')
+                                }",
                                 color = Negro,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
+                                fontWeight = FontWeight.Bold
                             )
-
-                            val resumen = registro.detalles.joinToString(" · ") { detalle ->
-                                "${detalle.cantidad} x ${detalle.nombreProducto}"
-                            }
 
                             Text(
-                                text = "$resumen · ${pedido.horaRecojo}",
-                                color = Color(0xFF6B7280),
-                                fontSize = 12.sp,
-                                maxLines = 2
+                                text = registro.cliente.nombre,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
+                            Text(
+                                text = "Recojo: ${pedido.horaRecojo}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme
+                                    .onSurfaceVariant
+                            )
+
+                            Text(
+                                text = "S/ %.2f".format(pedido.total),
+                                color = Indigo,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
-
 
                         Button(
                             onClick = { onPreparar(registro) },
@@ -353,7 +342,6 @@ private fun ContadorAdmin(
     }
 }
 
-
 @Composable
 private fun BarraHora(
     hora: String,
@@ -388,3 +376,4 @@ private fun BarraHora(
         )
     }
 }
+

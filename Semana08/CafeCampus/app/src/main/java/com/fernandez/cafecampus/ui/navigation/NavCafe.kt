@@ -8,11 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.*
 import com.fernandez.cafecampus.ui.cliente.LoginScreen
 import com.fernandez.cafecampus.viewmodel.SesionViewModel
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import com.fernandez.cafecampus.viewmodel.MenuViewModel
 import com.fernandez.cafecampus.ui.cliente.MenuScreen
 import com.fernandez.cafecampus.ui.components.ClienteBottomBar
@@ -29,11 +25,15 @@ import com.fernandez.cafecampus.ui.admin.PanelScreen
 import com.fernandez.cafecampus.ui.admin.PedidosAdminScreen
 import com.fernandez.cafecampus.ui.components.AdminBottomBar
 import com.fernandez.cafecampus.model.EstadoPedido
+import com.fernandez.cafecampus.ui.admin.AjustesScreen
 import com.fernandez.cafecampus.ui.admin.DetallePedidoAdminScreen
 import com.fernandez.cafecampus.viewmodel.MenuAdminViewModel
 import com.fernandez.cafecampus.ui.admin.MenuAdminScreen
 import com.fernandez.cafecampus.ui.admin.FormularioProductoScreen
+import com.fernandez.cafecampus.ui.cliente.PerfilClienteScreen
 
+
+private const val PERFIL_CLIENTE = "perfil_cliente"
 
 @Composable
 fun NavCafe(
@@ -87,6 +87,7 @@ fun NavCafe(
 
             val carrito by menuVm.carrito.collectAsState()
             val confirmando by pedidosVm.confirmando.collectAsState()
+            val recibirPedidos by vm.recibirPedidos.collectAsState()
             val error by pedidosVm.error.collectAsState()
             val pedidoCreado by pedidosVm.pedidoCreado.collectAsState()
 
@@ -110,13 +111,15 @@ fun NavCafe(
             ConfirmarPedidoScreen(
                 items = carrito,
                 confirmando = confirmando,
+                recibirPedidos = recibirPedidos,
                 error = error,
                 onConfirmar = { hora, pago, nota ->
                     pedidosVm.confirmar(
                         items = carrito,
                         horaRecojo = hora,
                         pago = pago,
-                        nota = nota
+                        nota = nota,
+                        recibirPedidos = recibirPedidos
                     )
                 },
                 onVolver = {
@@ -174,7 +177,7 @@ fun NavCafe(
                             }
                         },
                         onPerfil = {
-                            // Pantalla de perfil pendiente
+                            navController.navigate(PERFIL_CLIENTE) { launchSingleTop = true }
                         }
                     )
                 }
@@ -208,6 +211,38 @@ fun NavCafe(
 
 
 
+        composable(PERFIL_CLIENTE) {
+            Scaffold(
+                bottomBar = {
+                    ClienteBottomBar(
+                        seleccionado = "perfil",
+                        onMenu = {
+                            navController.navigate(Rutas.MENU_CLIENTE) {
+                                popUpTo(Rutas.MENU_CLIENTE) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        },
+                        onPedidos = {
+                            navController.navigate(Rutas.MIS_PEDIDOS) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onPerfil = {}
+                    )
+                }
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding)) {
+                    PerfilClienteScreen(
+                        onCerrarSesion = {
+                            menuVm.vaciar()
+                            vm.cerrarSesion()
+                        },
+                        onVolver = { navController.popBackStack() }
+                    )
+                }
+            }
+        }
+
         composable(Rutas.PANEL_ADMIN) {
 
             val nuevos by panelAdminVm.nuevos.collectAsState()
@@ -232,7 +267,9 @@ fun NavCafe(
                             }
                         },
                         onAjustes = {
-                            // Se implementará en el Paso 11
+                            navController.navigate(Rutas.AJUSTES_ADMIN) {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -262,9 +299,7 @@ fun NavCafe(
                                 launchSingleTop = true
                             }
                         },
-                        onCerrarSesion = {
-                            vm.cerrarSesion()
-                        }
+                        // Cerrar sesión ahora está en Ajustes
                     )
                 }
             }
@@ -294,7 +329,9 @@ fun NavCafe(
                         },
                         onMenu = {},
                         onAjustes = {
-                            // Paso 11
+                            navController.navigate(Rutas.AJUSTES_ADMIN) {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -400,10 +437,14 @@ fun NavCafe(
                         },
                         onPedidos = {},
                         onMenu = {
-                            // Paso 10
+                            navController.navigate(Rutas.MENU_ADMIN) {
+                                launchSingleTop = true
+                            }
                         },
                         onAjustes = {
-                            // Paso 11
+                            navController.navigate(Rutas.AJUSTES_ADMIN) {
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -448,6 +489,67 @@ fun NavCafe(
                 }
             }
         }
+
+
+        composable(Rutas.AJUSTES_ADMIN) {
+
+            val modoOscuro by vm.modoOscuro.collectAsState()
+            val notificaciones by vm.notificaciones.collectAsState()
+            val recibirPedidos by vm.recibirPedidos.collectAsState()
+
+            Scaffold(
+                bottomBar = {
+                    AdminBottomBar(
+                        seleccionado = "ajustes",
+                        onPanel = {
+                            navController.navigate(Rutas.PANEL_ADMIN) {
+                                popUpTo(Rutas.PANEL_ADMIN) {
+                                    inclusive = false
+                                }
+                                launchSingleTop = true
+                            }
+                        },
+                        onPedidos = {
+                            navController.navigate(Rutas.PEDIDOS_ADMIN) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onMenu = {
+                            navController.navigate(Rutas.MENU_ADMIN) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onAjustes = {}
+                    )
+                }
+            ) { innerPadding ->
+
+                Box(
+                    modifier = Modifier.padding(innerPadding)
+                ) {
+                    AjustesScreen(
+                        modoOscuro = modoOscuro,
+                        notificaciones = notificaciones,
+                        recibirPedidos = recibirPedidos,
+                        onModoOscuro = vm::cambiarModoOscuro,
+                        onNotificaciones = vm::cambiarNotificaciones,
+                        onRecibirPedidos = vm::cambiarRecibirPedidos,
+                        onCambiarPerfil = {
+                            menuVm.vaciar()
+                            vm.cambiarPerfil()
+                        },
+                        onCerrarSesion = {
+                            menuVm.vaciar()
+                            vm.cerrarSesion()
+                        },
+                        onVolver = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+            }
+        }
+
 
 
         composable(
@@ -588,7 +690,7 @@ fun NavCafe(
                                 }
                             },
                             onPerfil = {
-                                // Pendiente: pantalla Perfil
+                                navController.navigate(PERFIL_CLIENTE) { launchSingleTop = true }
                             }
                         )
                     }
@@ -649,7 +751,7 @@ fun NavCafe(
                             // Ya estamos en Mis pedidos
                         },
                         onPerfil = {
-                            // Pendiente: pantalla Perfil
+                            navController.navigate(PERFIL_CLIENTE) { launchSingleTop = true }
                         }
                     )
                 }
