@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "8628404129",
+    "project_id": "miappventas-5ea6a",
+    "storage_bucket": "miappventas-5ea6a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8628404129:android:c3daf948070f60e92a55e0",
+        "android_client_info": {
+          "package_name": "com.tecsup.authfirebasefernandez"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIi-Q7eLbsX1qnaZCfZxfmmW-FMTNR5fg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
