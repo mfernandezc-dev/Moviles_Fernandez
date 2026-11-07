@@ -31,9 +31,15 @@ class ItemRepositoryImpl(private val api: ApiService) : ItemRepository {
         Result.failure(error)
     }
 
-    override suspend fun obtenerDetalle(id: Int): Result<Item> = Result.failure(
-        UnsupportedOperationException("El detalle de producto no está disponible en H6.")
-    )
+    override suspend fun obtenerDetalle(id: Int): Result<Item> = try {
+        Result.success(api.obtenerDetalle(id).toItem())
+    } catch (error: IOException) {
+        Result.failure(error)
+    } catch (error: HttpException) {
+        Result.failure(error)
+    } catch (error: SerializationException) {
+        Result.failure(error)
+    }
 
     override suspend fun alternarFavorito(id: Int) {
         throw UnsupportedOperationException("Los favoritos no están disponibles en H6.")

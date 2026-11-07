@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.fernandez.catalogo.ui.lista.ListaScreen
 import com.fernandez.catalogo.ui.lista.ListaViewModel
+import com.fernandez.catalogo.ui.navigation.AppNav
 import com.fernandez.catalogo.ui.theme.CatalogoTheme
 
 class MainActivity : ComponentActivity() {
@@ -37,8 +37,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             CatalogoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ListaScreen(
-                        viewModel = listaViewModel,
+                    AppNav(
+                        listaViewModel = listaViewModel,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

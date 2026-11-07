@@ -28,6 +28,7 @@ import java.util.Locale
 @Composable
 fun ListaScreen(
     viewModel: ListaViewModel,
+    onSeleccionarItem: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
@@ -69,7 +70,10 @@ fun ListaScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(estadoActual.datos, key = { it.id }) { item ->
-                            TarjetaLaptop(item = item)
+                            TarjetaLaptop(
+                                item = item,
+                                onSeleccionar = { onSeleccionarItem(item.id) }
+                            )
                         }
                     }
                 }
@@ -84,8 +88,11 @@ fun ListaScreen(
 }
 
 @Composable
-private fun TarjetaLaptop(item: Item) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun TarjetaLaptop(item: Item, onSeleccionar: () -> Unit) {
+    Card(
+        onClick = onSeleccionar,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
