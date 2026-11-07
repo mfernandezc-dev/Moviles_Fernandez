@@ -1,62 +1,56 @@
 package com.fernandez.catalogo.ui.lista
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.fernandez.catalogo.data.repository.ItemRepository
 import com.fernandez.catalogo.domain.model.Item
 import com.fernandez.catalogo.ui.UiState
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-class ListaViewModel : ViewModel() {
-    private val itemsDePrueba = listOf(
-        Item(
-            id = 1,
-            titulo = "Andes Pro 14",
-            subtitulo = "Pantalla de 14 pulgadas, 16 GB de RAM y SSD de 512 GB.",
-            imagenUrl = null,
-            precio = 2899.90,
-            esFavorito = false
-        ),
-        Item(
-            id = 2,
-            titulo = "Costa Air 13",
-            subtitulo = "Ligera y portátil, con 8 GB de RAM y SSD de 256 GB.",
-            imagenUrl = null,
-            precio = 2199.00,
-            esFavorito = false
-        ),
-        Item(
-            id = 3,
-            titulo = "Sierra Studio 16",
-            subtitulo = "Pantalla de 16 pulgadas, 32 GB de RAM y SSD de 1 TB.",
-            imagenUrl = null,
-            precio = 4599.90,
-            esFavorito = false
-        ),
-        Item(
-            id = 4,
-            titulo = "Valle Work 15",
-            subtitulo = "Ideal para estudiar y trabajar, con 16 GB de RAM y SSD de 512 GB.",
-            imagenUrl = null,
-            precio = 2599.00,
-            esFavorito = false
-        ),
-        Item(
-            id = 5,
-            titulo = "Pacífico Gamer 16",
-            subtitulo = "Gráficos dedicados, 16 GB de RAM y SSD de 1 TB.",
-            imagenUrl = null,
-            precio = 5299.90,
-            esFavorito = false
-        )
-    )
+class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
+    private val cargando = MutableStateFlow(true)
+    private val mensajeError = MutableStateFlow<String?>(null)
+    private var carga: Job? = null
 
-    private val _estado = MutableStateFlow<UiState<List<Item>>>(
-        UiState.Exito(itemsDePrueba)
-    )
-    val estado: StateFlow<UiState<List<Item>>> = _estado.asStateFlow()
+    val estado: StateFlow<UiState<List<Item>>> = combine(
+        repository.items,
+        cargando,
+        mensajeError
+    ) { productos, estaCargando, error ->
+        when {
+            estaCargando -> UiState.Cargando
+            productos.isNotEmpty() -> UiState.Exito(productos)
+            error != null -> UiState.Error(error)
+            else -> UiState.Exito(productos)
+        }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Cargando)
+
+    init {
+        cargarItems()
+    }
 
     fun cargarItems() {
-        _estado.value = UiState.Exito(itemsDePrueba)
+        if (carga?.isActive == true) return
+
+        cargando.value = true
+        mensajeError.value = null
+        carga = viewModelScope.launch {
+            try {
+                val resultado = repository.refrescar()
+                mensajeError.value = if (resultado.isFailure) {
+                    "No se pudieron cargar las laptops. Comprueba tu conexión y vuelve a intentarlo."
+                } else {
+                    null
+                }
+            } finally {
+                cargando.value = false
+            }
+        }
     }
 }

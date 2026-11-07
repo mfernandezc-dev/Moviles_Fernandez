@@ -12,12 +12,24 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.fernandez.catalogo.ui.lista.ListaScreen
 import com.fernandez.catalogo.ui.lista.ListaViewModel
 import com.fernandez.catalogo.ui.theme.CatalogoTheme
 
 class MainActivity : ComponentActivity() {
-    private val listaViewModel: ListaViewModel by viewModels()
+    private val listaViewModel: ListaViewModel by viewModels {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                require(modelClass.isAssignableFrom(ListaViewModel::class.java)) {
+                    "ViewModel no compatible: ${modelClass.name}"
+                }
+                @Suppress("UNCHECKED_CAST")
+                return ListaViewModel(AppContainer.itemRepository) as T
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
