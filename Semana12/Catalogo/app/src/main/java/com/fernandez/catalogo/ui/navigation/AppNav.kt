@@ -14,6 +14,8 @@ import androidx.navigation.navArgument
 import com.fernandez.catalogo.AppContainer
 import com.fernandez.catalogo.ui.detalle.DetalleScreen
 import com.fernandez.catalogo.ui.detalle.DetalleViewModel
+import com.fernandez.catalogo.ui.favoritos.FavoritosScreen
+import com.fernandez.catalogo.ui.favoritos.FavoritosViewModel
 import com.fernandez.catalogo.ui.lista.ListaScreen
 import com.fernandez.catalogo.ui.lista.ListaViewModel
 
@@ -36,7 +38,40 @@ fun AppNav(
                     navController.navigate("detalle/$id") {
                         launchSingleTop = true
                     }
+                },
+                onVerFavoritos = {
+                    navController.navigate("favoritos") {
+                        launchSingleTop = true
+                    }
                 }
+            )
+        }
+
+        composable("favoritos") { backStackEntry ->
+            val factory = remember {
+                object : ViewModelProvider.Factory {
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                        require(modelClass.isAssignableFrom(FavoritosViewModel::class.java)) {
+                            "ViewModel no compatible: ${modelClass.name}"
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        return FavoritosViewModel(AppContainer.itemRepository) as T
+                    }
+                }
+            }
+            val favoritosViewModel: FavoritosViewModel = viewModel(
+                viewModelStoreOwner = backStackEntry,
+                factory = factory
+            )
+
+            FavoritosScreen(
+                viewModel = favoritosViewModel,
+                onSeleccionarItem = { id ->
+                    navController.navigate("detalle/$id") {
+                        launchSingleTop = true
+                    }
+                },
+                onVolver = { navController.popBackStack() }
             )
         }
 

@@ -37,6 +37,12 @@ class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
         cargarItems()
     }
 
+    fun alternarFavorito(id: Int) {
+        viewModelScope.launch {
+            repository.alternarFavorito(id)
+        }
+    }
+
     fun cargarItems() {
         if (carga?.isActive == true) return
 
