@@ -14,19 +14,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
-    private val cargando = MutableStateFlow(true)
-    private val mensajeError = MutableStateFlow<String?>(null)
+    private val resultadoCarga = MutableStateFlow<Result<Int>?>(null)
     private var carga: Job? = null
 
     val estado: StateFlow<UiState<List<Item>>> = combine(
         repository.items,
-        cargando,
-        mensajeError
-    ) { productos, estaCargando, error ->
+        resultadoCarga
+    ) { productos, resultado ->
         when {
-            estaCargando -> UiState.Cargando
             productos.isNotEmpty() -> UiState.Exito(productos)
-            error != null -> UiState.Error(error)
+            resultado == null -> UiState.Cargando
+            resultado.isFailure -> UiState.Error(
+                "No se pudieron cargar las laptops. Comprueba tu conexión y vuelve a intentarlo."
+            )
+            // El guardado puede terminar antes de que Room emita la lista actualizada.
+            resultado.getOrDefault(0) > 0 -> UiState.Cargando
             else -> UiState.Exito(productos)
         }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Cargando)
@@ -38,19 +40,9 @@ class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
     fun cargarItems() {
         if (carga?.isActive == true) return
 
-        cargando.value = true
-        mensajeError.value = null
+        resultadoCarga.value = null
         carga = viewModelScope.launch {
-            try {
-                val resultado = repository.refrescar()
-                mensajeError.value = if (resultado.isFailure) {
-                    "No se pudieron cargar las laptops. Comprueba tu conexión y vuelve a intentarlo."
-                } else {
-                    null
-                }
-            } finally {
-                cargando.value = false
-            }
+            resultadoCarga.value = repository.refrescar()
         }
     }
 }

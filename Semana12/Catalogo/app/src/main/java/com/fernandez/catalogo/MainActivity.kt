@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        AppContainer.inicializar(applicationContext)
         setContent {
             CatalogoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

@@ -1,28 +1,34 @@
 package com.fernandez.catalogo.data.repository
 
+import com.fernandez.catalogo.data.local.ItemDao
+import com.fernandez.catalogo.data.mapper.toEntity
 import com.fernandez.catalogo.data.mapper.toItem
 import com.fernandez.catalogo.data.remote.ApiService
 import com.fernandez.catalogo.domain.model.Item
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 
-class ItemRepositoryImpl(private val api: ApiService) : ItemRepository {
-    // Fuente temporal de H6; Room la reemplazará como fuente única de verdad.
-    private val itemsEnMemoria = MutableStateFlow<List<Item>>(emptyList())
-    override val items: Flow<List<Item>> = itemsEnMemoria.asStateFlow()
+class ItemRepositoryImpl(
+    private val api: ApiService,
+    private val dao: ItemDao
+) : ItemRepository {
+    override val items: Flow<List<Item>> = dao.todos().map { entidades ->
+        entidades.map { it.toItem() }
+    }
 
-    // Los favoritos todavía no están implementados.
-    override val favoritos: Flow<List<Item>> = flowOf(emptyList())
+    override val favoritos: Flow<List<Item>> = dao.favoritos().map { entidades ->
+        entidades.map { it.toItem() }
+    }
 
     override suspend fun refrescar(): Result<Int> = try {
-        val productos = api.listar().products.map { it.toItem() }
-        itemsEnMemoria.value = productos
-        Result.success(productos.size)
+        val productos = api.listar().products
+        val idsFavoritos = dao.idsFavoritos().toSet()
+        val entidades = productos.map { it.toEntity(esFavorito = it.id in idsFavoritos) }
+        dao.guardarTodos(entidades)
+        Result.success(entidades.size)
     } catch (error: IOException) {
         Result.failure(error)
     } catch (error: HttpException) {
@@ -42,14 +48,14 @@ class ItemRepositoryImpl(private val api: ApiService) : ItemRepository {
     }
 
     override suspend fun alternarFavorito(id: Int) {
-        throw UnsupportedOperationException("Los favoritos no están disponibles en H6.")
+        dao.alternarFavorito(id)
     }
 
-    override suspend fun cantidadGuardada(): Int = itemsEnMemoria.value.size
+    override suspend fun cantidadGuardada(): Int = dao.contar()
 
-    override suspend fun cantidadFavoritos(): Int = 0
+    override suspend fun cantidadFavoritos(): Int = dao.contarFavoritos()
 
     override suspend fun limpiarCache() {
-        itemsEnMemoria.value = emptyList()
+        dao.borrarTodo()
     }
 }
