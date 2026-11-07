@@ -38,6 +38,7 @@ fun ListaScreen(
     viewModel: ListaViewModel,
     onSeleccionarItem: (Int) -> Unit,
     onVerFavoritos: () -> Unit,
+    onCerrarSesion: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
@@ -50,11 +51,13 @@ fun ListaScreen(
             modifier = Modifier.padding(16.dp)
         )
 
-        TextButton(
-            onClick = onVerFavoritos,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Text("Mis favoritos")
+        Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+            TextButton(onClick = onVerFavoritos) {
+                Text("Mis favoritos")
+            }
+            TextButton(onClick = onCerrarSesion) {
+                Text("Cerrar sesión")
+            }
         }
 
         when (val estadoActual = estado) {

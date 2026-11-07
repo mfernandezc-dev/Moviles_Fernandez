@@ -2,12 +2,19 @@ package com.fernandez.catalogo
 
 import android.content.Context
 import androidx.room.Room
+import com.fernandez.catalogo.data.auth.AuthRepository
+import com.fernandez.catalogo.data.auth.FirebaseAuthRepository
 import com.fernandez.catalogo.data.local.AppDatabase
 import com.fernandez.catalogo.data.remote.RetrofitClient
 import com.fernandez.catalogo.data.repository.ItemRepository
 import com.fernandez.catalogo.data.repository.ItemRepositoryImpl
+import com.google.firebase.auth.FirebaseAuth
 
 object AppContainer {
+    val authRepository: AuthRepository by lazy {
+        FirebaseAuthRepository(FirebaseAuth.getInstance())
+    }
+
     @Volatile
     private var repository: ItemRepository? = null
 
