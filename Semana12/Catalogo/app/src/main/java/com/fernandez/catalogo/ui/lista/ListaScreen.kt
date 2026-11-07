@@ -41,6 +41,7 @@ fun ListaScreen(
     modifier: Modifier = Modifier
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
+    val actualizacionFallida by viewModel.actualizacionFallida.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
         Text(
@@ -74,6 +75,24 @@ fun ListaScreen(
                         )
                     }
                 } else {
+                    if (actualizacionFallida) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "No se pudo actualizar. Mostrando datos guardados.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(onClick = viewModel::cargarItems) {
+                                Text("Reintentar")
+                            }
+                        }
+                    }
+
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
