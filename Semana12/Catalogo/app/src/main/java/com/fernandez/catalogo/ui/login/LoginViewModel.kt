@@ -6,13 +6,13 @@ import com.fernandez.catalogo.data.auth.AuthRepository
 import com.fernandez.catalogo.domain.model.Sesion
 import com.fernandez.catalogo.ui.UiState
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 data class LoginUiState(
@@ -26,10 +26,48 @@ class LoginViewModel(private val repository: AuthRepository) : ViewModel() {
     private val _estado = MutableStateFlow(LoginUiState())
     val estado: StateFlow<LoginUiState> = _estado.asStateFlow()
 
-    val sesion: StateFlow<UiState<Sesion?>> = repository.sesiones
-        .map<Sesion?, UiState<Sesion?>> { UiState.Exito(it) }
-        .catch { emit(UiState.Error("No se pudo comprobar la sesión. Vuelve a abrir la aplicación.")) }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Cargando)
+    private val _sesion = MutableStateFlow<UiState<Sesion?>>(UiState.Cargando)
+    val sesion: StateFlow<UiState<Sesion?>> = _sesion.asStateFlow()
+    private val reintentosPerfil = MutableStateFlow(0)
+    private var versionAutorizacion = 0L
+
+    init {
+        viewModelScope.launch {
+            try {
+                combine(repository.sesiones, reintentosPerfil) { usuario, _ -> usuario }
+                    .collectLatest { usuario ->
+                        val version = ++versionAutorizacion
+                        if (usuario == null) {
+                            _sesion.value = UiState.Exito(null)
+                        } else {
+                            _sesion.value = UiState.Cargando
+                            val resultado = repository.obtenerRol(usuario.uid)
+                            currentCoroutineContext().ensureActive()
+                            if (version == versionAutorizacion && repository.sesionActual()?.uid == usuario.uid) {
+                                _sesion.value = resultado.fold(
+                                    onSuccess = { rol -> UiState.Exito(usuario.copy(rol = rol)) },
+                                    onFailure = { error ->
+                                        UiState.Error(error.message ?: "No se pudo verificar el perfil de acceso.")
+                                    }
+                                )
+                            }
+                        }
+                    }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                _sesion.value = UiState.Error("No se pudo comprobar la sesión y el perfil de acceso.")
+            }
+        }
+    }
+
+    fun revalidarPerfil() {
+        val actual = _sesion.value
+        if (actual == UiState.Cargando || (actual is UiState.Exito && actual.datos == null)) return
+        ++versionAutorizacion
+        _sesion.value = UiState.Cargando
+        reintentosPerfil.value += 1
+    }
 
     fun actualizarCorreo(correo: String) {
         if (_estado.value.cargando) return
@@ -84,7 +122,10 @@ class LoginViewModel(private val repository: AuthRepository) : ViewModel() {
     }
 
     fun cerrarSesion() {
+        ++versionAutorizacion
+        _sesion.value = UiState.Cargando
         repository.cerrarSesion()
         _estado.value = LoginUiState()
+        _sesion.value = UiState.Exito(null)
     }
 }

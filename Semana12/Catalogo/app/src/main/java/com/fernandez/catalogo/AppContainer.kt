@@ -9,10 +9,13 @@ import com.fernandez.catalogo.data.remote.RetrofitClient
 import com.fernandez.catalogo.data.repository.ItemRepository
 import com.fernandez.catalogo.data.repository.ItemRepositoryImpl
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 object AppContainer {
+    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
     val authRepository: AuthRepository by lazy {
-        FirebaseAuthRepository(FirebaseAuth.getInstance())
+        FirebaseAuthRepository(FirebaseAuth.getInstance(), firestore)
     }
 
     @Volatile
