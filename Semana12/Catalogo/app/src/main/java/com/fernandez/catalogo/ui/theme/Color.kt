@@ -2,10 +2,9 @@ package com.fernandez.catalogo.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val AzulPrincipal = Color(0xFF3456C7)
+val AzulClaro = Color(0xFFE6ECFF)
+val IndigoTexto = Color(0xFF15213A)
+val FondoClaro = Color(0xFFF6F8FC)
+val AzulNocturno = Color(0xFFBBC7FF)
+val FondoOscuro = Color(0xFF0D1425)

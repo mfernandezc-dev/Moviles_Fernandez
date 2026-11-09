@@ -5,21 +5,30 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,17 +44,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import coil3.compose.AsyncImage
 import com.fernandez.catalogo.domain.model.Item
 import com.fernandez.catalogo.ui.UiState
 import com.fernandez.catalogo.ui.components.Cargando
 import com.fernandez.catalogo.ui.components.ErrorView
+import com.fernandez.catalogo.ui.components.AvisoInformativo
+import com.fernandez.catalogo.ui.components.EncabezadoPantalla
+import com.fernandez.catalogo.ui.components.EstadoVacio
+import com.fernandez.catalogo.ui.components.ImagenLaptop
 import java.util.Locale
 
 @Composable
@@ -85,110 +95,67 @@ fun ListaScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Catálogo de laptops",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
-        )
-
-        Row(modifier = Modifier.padding(horizontal = 16.dp)) {
-            TextButton(onClick = onVerFavoritos) {
-                Text("Mis favoritos")
-            }
-            TextButton(onClick = onCerrarSesion) {
-                Text("Cerrar sesión")
-            }
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item(key = "encabezado") {
+            EncabezadoPantalla("Catálogo de laptops", "Explora las laptops disponibles y guarda tus favoritas.")
         }
-
-        TextButton(
-            onClick = {
-                avisoNotificacion = null
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                    PackageManager.PERMISSION_GRANTED
-                ) {
-                    permisoPendiente = true
-                    solicitarPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
-                } else {
-                    enviarNotificacion()
-                }
-            },
-            enabled = !permisoPendiente,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Text("Probar notificación")
+        item(key = "acciones") {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FilledTonalButton(onClick = onVerFavoritos) { Text("Mis favoritos") }
+                TextButton(onClick = onCerrarSesion) { Text("Cerrar sesión") }
+                OutlinedButton(
+                    onClick = {
+                        avisoNotificacion = null
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                            PackageManager.PERMISSION_GRANTED
+                        ) {
+                            permisoPendiente = true
+                            solicitarPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            enviarNotificacion()
+                        }
+                    },
+                    enabled = !permisoPendiente
+                ) { Text("Probar notificación") }
+            }
         }
         avisoNotificacion?.let { mensaje ->
-            Text(
-                text = mensaje,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            item(key = "aviso-notificacion") { AvisoInformativo(mensaje) }
         }
 
         when (val estadoActual = estado) {
-            UiState.Cargando -> Cargando(modifier = Modifier.weight(1f))
+            UiState.Cargando -> item(key = "cargando") { Cargando(Modifier.heightIn(min = 240.dp)) }
             is UiState.Exito -> {
                 if (estadoActual.datos.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No hay productos disponibles.",
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                    item(key = "vacio") {
+                        EstadoVacio("Sin productos", "No hay productos disponibles.")
                     }
                 } else {
                     if (actualizacionFallida) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "No se pudo actualizar. Mostrando datos guardados.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            TextButton(onClick = viewModel::cargarItems) {
-                                Text("Reintentar")
+                        item(key = "actualizacion-fallida") {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                AvisoInformativo("No se pudo actualizar. Mostrando datos guardados.")
+                                TextButton(onClick = viewModel::cargarItems) { Text("Reintentar") }
                             }
                         }
                     }
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 16.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(estadoActual.datos, key = { it.id }) { item ->
-                            TarjetaLaptop(
-                                item = item,
-                                onSeleccionar = { onSeleccionarItem(item.id) },
-                                onAlternarFavorito = { viewModel.alternarFavorito(item.id) }
-                            )
-                        }
+                    items(estadoActual.datos, key = { it.id }) { item ->
+                        TarjetaLaptop(
+                            item = item,
+                            onSeleccionar = { onSeleccionarItem(item.id) },
+                            onAlternarFavorito = { viewModel.alternarFavorito(item.id) }
+                        )
                     }
                 }
             }
-            is UiState.Error -> ErrorView(
-                mensaje = estadoActual.mensaje,
-                onReintentar = viewModel::cargarItems,
-                modifier = Modifier.weight(1f)
-            )
+            is UiState.Error -> item(key = "error") {
+                ErrorView(estadoActual.mensaje, viewModel::cargarItems, Modifier.heightIn(min = 240.dp))
+            }
         }
     }
 }
@@ -199,27 +166,32 @@ internal fun TarjetaLaptop(
     onSeleccionar: () -> Unit,
     onAlternarFavorito: () -> Unit
 ) {
-    val imagenUrl = item.imagenUrl?.takeIf { it.isNotBlank() }
-    var cargandoImagen by remember(imagenUrl) { mutableStateOf(true) }
-    var errorImagen by remember(imagenUrl) { mutableStateOf(false) }
-
     Card(
         onClick = onSeleccionar,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            ImagenLaptop(item.imagenUrl, item.titulo, altura = 200.dp)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = item.titulo,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f)
                 )
                 IconToggleButton(
                     checked = item.esFavorito,
-                    onCheckedChange = { onAlternarFavorito() }
+                    onCheckedChange = { onAlternarFavorito() },
+                    modifier = Modifier.size(48.dp).background(
+                        if (item.esFavorito) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+                        CircleShape
+                    )
                 ) {
                     Icon(
                         imageVector = if (item.esFavorito) CorazonActivo else CorazonVacio,
@@ -236,55 +208,20 @@ internal fun TarjetaLaptop(
                     )
                 }
             }
-            Box(
-                modifier = Modifier.fillMaxWidth().height(180.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                if (imagenUrl != null) {
-                    AsyncImage(
-                        model = imagenUrl,
-                        contentDescription = "Fotografía de ${item.titulo}",
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
-                        onLoading = {
-                            cargandoImagen = true
-                            errorImagen = false
-                        },
-                        onSuccess = {
-                            cargandoImagen = false
-                            errorImagen = false
-                        },
-                        onError = {
-                            cargandoImagen = false
-                            errorImagen = true
-                        }
-                    )
-                }
-                val avisoImagen = when {
-                    imagenUrl == null || errorImagen -> "Imagen no disponible"
-                    cargandoImagen -> "Cargando imagen…"
-                    else -> null
-                }
-                avisoImagen?.let { mensaje ->
-                    Text(
-                        text = mensaje,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
             Text(
                 text = item.subtitulo,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text("Precio", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 text = String.format(
                     Locale.forLanguageTag("es-PE"),
                     "S/ %,.2f",
                     item.precio
                 ),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary
             )
         }

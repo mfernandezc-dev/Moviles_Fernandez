@@ -27,10 +27,11 @@ fun ErrorView(
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
         Text(
-            text = mensaje,
-            style = MaterialTheme.typography.bodyLarge,
+            text = "No se pudo cargar",
+            style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center
         )
+        AvisoInformativo(mensaje, esError = true)
         Button(onClick = onReintentar) {
             Text("Reintentar")
         }

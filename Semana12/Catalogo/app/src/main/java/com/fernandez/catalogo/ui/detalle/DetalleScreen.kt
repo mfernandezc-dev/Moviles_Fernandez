@@ -1,32 +1,32 @@
 package com.fernandez.catalogo.ui.detalle
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
 import com.fernandez.catalogo.ui.UiState
 import com.fernandez.catalogo.ui.components.Cargando
 import com.fernandez.catalogo.ui.components.ErrorView
+import com.fernandez.catalogo.ui.components.EncabezadoPantalla
+import com.fernandez.catalogo.ui.components.ImagenLaptop
 import java.util.Locale
 
 @Composable
@@ -38,112 +38,60 @@ fun DetalleScreen(
     val estado by viewModel.estado.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
-        Text(
-            text = "Detalle de laptop",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(16.dp)
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+        LazyColumn(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            contentPadding = PaddingValues(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            item { EncabezadoPantalla("Detalle de laptop", "Información del producto seleccionado.") }
             when (val estadoActual = estado) {
-                UiState.Cargando -> Cargando()
-                is UiState.Error -> ErrorView(
-                    mensaje = estadoActual.mensaje,
-                    onReintentar = viewModel::reintentar
-                )
-                is UiState.Exito -> {
-                    val item = estadoActual.datos
-                    val imagenUrl = item.imagenUrl?.takeIf { it.isNotBlank() }
-                    var cargandoImagen by remember(imagenUrl) { mutableStateOf(true) }
-                    var errorImagen by remember(imagenUrl) { mutableStateOf(false) }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp)
+                UiState.Cargando -> item { Cargando(Modifier.heightIn(min = 240.dp)) }
+                is UiState.Error -> item {
+                    ErrorView(estadoActual.mensaje, viewModel::reintentar, Modifier.heightIn(min = 240.dp))
+                }
+                is UiState.Exito -> item {
+                    val producto = estadoActual.datos
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                            ImagenLaptop(producto.imagenUrl, producto.titulo, altura = 240.dp)
+                            Text(producto.titulo, style = MaterialTheme.typography.headlineSmall)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                             ) {
-                                Box(
-                                    modifier = Modifier.fillMaxWidth().height(220.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (imagenUrl != null) {
-                                        AsyncImage(
-                                            model = imagenUrl,
-                                            contentDescription = "Fotografía de ${item.titulo}",
-                                            contentScale = ContentScale.Fit,
-                                            modifier = Modifier.fillMaxSize(),
-                                            onLoading = {
-                                                cargandoImagen = true
-                                                errorImagen = false
-                                            },
-                                            onSuccess = {
-                                                cargandoImagen = false
-                                                errorImagen = false
-                                            },
-                                            onError = {
-                                                cargandoImagen = false
-                                                errorImagen = true
-                                            }
-                                        )
-                                    }
-                                    val avisoImagen = when {
-                                        imagenUrl == null || errorImagen -> "Imagen no disponible"
-                                        cargandoImagen -> "Cargando imagen…"
-                                        else -> null
-                                    }
-                                    avisoImagen?.let { mensaje ->
-                                        Text(
-                                            text = mensaje,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text("Precio", style = MaterialTheme.typography.labelMedium)
+                                    Text(
+                                        String.format(Locale.forLanguageTag("es-PE"), "S/ %,.2f", producto.precio),
+                                        style = MaterialTheme.typography.headlineMedium
+                                    )
                                 }
-                                Text(
-                                    text = item.titulo,
-                                    style = MaterialTheme.typography.titleLarge
-                                )
-                                Text(
-                                    text = item.subtitulo,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = String.format(
-                                        Locale.forLanguageTag("es-PE"),
-                                        "S/ %,.2f",
-                                        item.precio
-                                    ),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "Importe de la API. S/ es solo una presentación temporal, sin conversión de moneda.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
                             }
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Text("Descripción", style = MaterialTheme.typography.titleMedium)
+                            Text(producto.subtitulo, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "Importe de la API. S/ es solo una presentación temporal, sin conversión de moneda.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
             }
         }
 
-        Button(
+        OutlinedButton(
             onClick = onVolver,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).heightIn(min = 52.dp)
         ) {
             Text("Volver al catálogo")
         }
