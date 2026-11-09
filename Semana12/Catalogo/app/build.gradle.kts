@@ -54,6 +54,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

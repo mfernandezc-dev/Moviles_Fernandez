@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,11 +35,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import coil3.compose.AsyncImage
 import com.fernandez.catalogo.domain.model.Item
 import com.fernandez.catalogo.ui.UiState
 import com.fernandez.catalogo.ui.components.Cargando
@@ -196,6 +199,10 @@ internal fun TarjetaLaptop(
     onSeleccionar: () -> Unit,
     onAlternarFavorito: () -> Unit
 ) {
+    val imagenUrl = item.imagenUrl?.takeIf { it.isNotBlank() }
+    var cargandoImagen by remember(imagenUrl) { mutableStateOf(true) }
+    var errorImagen by remember(imagenUrl) { mutableStateOf(false) }
+
     Card(
         onClick = onSeleccionar,
         modifier = Modifier.fillMaxWidth()
@@ -226,6 +233,43 @@ internal fun TarjetaLaptop(
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         }
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imagenUrl != null) {
+                    AsyncImage(
+                        model = imagenUrl,
+                        contentDescription = "Fotografía de ${item.titulo}",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize(),
+                        onLoading = {
+                            cargandoImagen = true
+                            errorImagen = false
+                        },
+                        onSuccess = {
+                            cargandoImagen = false
+                            errorImagen = false
+                        },
+                        onError = {
+                            cargandoImagen = false
+                            errorImagen = true
+                        }
+                    )
+                }
+                val avisoImagen = when {
+                    imagenUrl == null || errorImagen -> "Imagen no disponible"
+                    cargandoImagen -> "Cargando imagen…"
+                    else -> null
+                }
+                avisoImagen?.let { mensaje ->
+                    Text(
+                        text = mensaje,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
