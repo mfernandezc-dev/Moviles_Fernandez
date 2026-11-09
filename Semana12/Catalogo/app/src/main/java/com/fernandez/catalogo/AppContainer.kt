@@ -8,6 +8,8 @@ import com.fernandez.catalogo.data.local.AppDatabase
 import com.fernandez.catalogo.data.remote.RetrofitClient
 import com.fernandez.catalogo.data.repository.ItemRepository
 import com.fernandez.catalogo.data.repository.ItemRepositoryImpl
+import com.fernandez.catalogo.notification.Notificador
+import com.fernandez.catalogo.notification.NotificadorAndroid
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -21,6 +23,12 @@ object AppContainer {
     @Volatile
     private var repository: ItemRepository? = null
 
+    @Volatile
+    private var notificadorLocal: Notificador? = null
+
+    val notificador: Notificador
+        get() = checkNotNull(notificadorLocal) { "AppContainer debe inicializarse antes de usarse." }
+
     val itemRepository: ItemRepository
         get() = checkNotNull(repository) { "AppContainer debe inicializarse antes de usarse." }
 
@@ -33,6 +41,8 @@ object AppContainer {
             AppDatabase::class.java,
             "catalogo.db"
         ).build()
+
+        notificadorLocal = NotificadorAndroid(context.applicationContext)
 
         repository = ItemRepositoryImpl(
             api = RetrofitClient.apiService,

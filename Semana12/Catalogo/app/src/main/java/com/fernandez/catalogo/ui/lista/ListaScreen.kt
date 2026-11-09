@@ -1,5 +1,10 @@
 package com.fernandez.catalogo.ui.lista
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +23,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,6 +37,8 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.fernandez.catalogo.domain.model.Item
 import com.fernandez.catalogo.ui.UiState
 import com.fernandez.catalogo.ui.components.Cargando
@@ -43,6 +55,32 @@ fun ListaScreen(
 ) {
     val estado by viewModel.estado.collectAsStateWithLifecycle()
     val actualizacionFallida by viewModel.actualizacionFallida.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val managerNotificaciones = remember(context.applicationContext) {
+        NotificationManagerCompat.from(context.applicationContext)
+    }
+    var permisoPendiente by rememberSaveable { mutableStateOf(false) }
+    var avisoNotificacion by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun enviarNotificacion() {
+        if (managerNotificaciones.areNotificationsEnabled()) {
+            avisoNotificacion = null
+            viewModel.probarNotificacion()
+        } else {
+            avisoNotificacion = "Las notificaciones están desactivadas para esta aplicación."
+        }
+    }
+
+    val solicitarPermiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+        if (permisoPendiente) {
+            permisoPendiente = false
+            if (concedido) {
+                enviarNotificacion()
+            } else {
+                avisoNotificacion = "Permiso de notificaciones denegado. No se envió ninguna notificación."
+            }
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         Text(
@@ -58,6 +96,32 @@ fun ListaScreen(
             TextButton(onClick = onCerrarSesion) {
                 Text("Cerrar sesión")
             }
+        }
+
+        TextButton(
+            onClick = {
+                avisoNotificacion = null
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                    PackageManager.PERMISSION_GRANTED
+                ) {
+                    permisoPendiente = true
+                    solicitarPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    enviarNotificacion()
+                }
+            },
+            enabled = !permisoPendiente,
+            modifier = Modifier.padding(horizontal = 16.dp)
+        ) {
+            Text("Probar notificación")
+        }
+        avisoNotificacion?.let { mensaje ->
+            Text(
+                text = mensaje,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
 
         when (val estadoActual = estado) {

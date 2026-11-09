@@ -26,7 +26,10 @@ class MainActivity : ComponentActivity() {
                     "ViewModel no compatible: ${modelClass.name}"
                 }
                 @Suppress("UNCHECKED_CAST")
-                return ListaViewModel(AppContainer.itemRepository) as T
+                return ListaViewModel(
+                    AppContainer.itemRepository,
+                    AppContainer.notificador
+                ) as T
             }
         }
     }

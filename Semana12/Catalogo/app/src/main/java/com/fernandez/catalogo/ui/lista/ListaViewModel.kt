@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.fernandez.catalogo.data.repository.ItemRepository
 import com.fernandez.catalogo.domain.model.Item
+import com.fernandez.catalogo.notification.Notificador
 import com.fernandez.catalogo.ui.UiState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
+class ListaViewModel(
+    private val repository: ItemRepository,
+    private val notificador: Notificador
+) : ViewModel() {
     private val resultadoCarga = MutableStateFlow<Result<Int>?>(null)
     private var carga: Job? = null
 
@@ -42,6 +46,10 @@ class ListaViewModel(private val repository: ItemRepository) : ViewModel() {
 
     init {
         cargarItems()
+    }
+
+    fun probarNotificacion() {
+        notificador.mostrar("Catálogo de Laptops", "Notificación local de prueba")
     }
 
     fun alternarFavorito(id: Int) {
