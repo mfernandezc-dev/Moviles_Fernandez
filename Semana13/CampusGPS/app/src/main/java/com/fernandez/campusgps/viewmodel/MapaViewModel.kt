@@ -16,6 +16,9 @@ import com.fernandez.campusgps.model.Lugar
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
+import com.fernandez.campusgps.model.TipoError
+import com.fernandez.campusgps.data.GpsApagadoException
+import com.fernandez.campusgps.data.PlayServicesNoDisponibleException
 
 class MapaViewModel(
     private val ubicacionRepo: UbicacionRepository,
@@ -56,10 +59,8 @@ class MapaViewModel(
 
                     _estado.value = UbicacionUi.Lista(posicion)
                 }
-                .onFailure {
-                    _estado.value = UbicacionUi.Error(
-                        mensajeDe(it)
-                    )
+                .onFailure { error ->
+                    _estado.value = errorDe(error)
                 }
         }
     }
@@ -84,7 +85,8 @@ class MapaViewModel(
 
     fun permisoDenegado() {
         _estado.value = UbicacionUi.Error(
-            "Sin permiso de ubicación no puedo mostrar dónde estás"
+            mensaje = "Sin permiso de ubicación no puedo mostrar dónde estás",
+            tipo = TipoError.PERMISO_DENEGADO
         )
     }
 
@@ -106,13 +108,33 @@ class MapaViewModel(
             initialValue = null
         )
 
-    private fun mensajeDe(e: Throwable): String =
-        when (e) {
+    private fun errorDe(e: Throwable): UbicacionUi.Error {
+
+        return when (e) {
 
             is SecurityException ->
-                "Falta el permiso de ubicación"
+                UbicacionUi.Error(
+                    mensaje = "Falta el permiso de ubicación",
+                    tipo = TipoError.PERMISO_DENEGADO
+                )
+
+            is GpsApagadoException ->
+                UbicacionUi.Error(
+                    mensaje = e.message ?: "El GPS está apagado",
+                    tipo = TipoError.GPS_APAGADO
+                )
+
+            is PlayServicesNoDisponibleException ->
+                UbicacionUi.Error(
+                    mensaje = e.message ?: "Google Play Services no está disponible",
+                    tipo = TipoError.SIN_PLAY_SERVICES
+                )
 
             else ->
-                e.message ?: "No se pudo obtener la ubicación"
+                UbicacionUi.Error(
+                    mensaje = e.message ?: "No se pudo obtener la ubicación",
+                    tipo = TipoError.DESCONOCIDO
+                )
         }
+    }
 }

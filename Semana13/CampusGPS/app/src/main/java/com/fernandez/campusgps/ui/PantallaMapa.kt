@@ -196,9 +196,11 @@ fun PantallaMapa(
 
             is UbicacionUi.Error -> {
 
-                Text(
-                    text = actual.mensaje,
-                    color = MaterialTheme.colorScheme.error
+                MensajeError(
+                    error = actual,
+                    onReintentar = {
+                        solicitarUbicacion()
+                    }
                 )
             }
         }
