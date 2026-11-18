@@ -24,6 +24,7 @@ import com.fernandez.campusgps.model.UbicacionUi
 import com.fernandez.campusgps.viewmodel.MapaViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.fillMaxWidth
 
 @Composable
 fun PantallaMapa(
@@ -32,6 +33,7 @@ fun PantallaMapa(
 
     val estado by vm.estado.collectAsState()
     val lugares by vm.lugares.collectAsState()
+    val seleccionado by vm.seleccionado.collectAsState()
 
     val contexto = LocalContext.current
 
@@ -78,9 +80,9 @@ fun PantallaMapa(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
 
         Text(
@@ -136,13 +138,33 @@ fun PantallaMapa(
                 )
 
                 Spacer(
-                    modifier = Modifier.height(16.dp)
+                    modifier = Modifier.height(12.dp)
                 )
 
                 MapaUbicacion(
                     latitud = actual.posicion.latitud,
                     longitud = actual.posicion.longitud,
-                    lugares = lugares.map { it.lugar }
+                    lugares = lugares.map { it.lugar },
+                    seleccionadoId = seleccionado,
+                    onSeleccionar = { id ->
+                        vm.seleccionar(id)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+
+                ListaLugares(
+                    lugares = lugares,
+                    seleccionado = seleccionado,
+                    onClick = { id ->
+                        vm.seleccionar(id)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(220.dp)
                 )
             }
 

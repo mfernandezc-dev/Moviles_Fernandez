@@ -84,8 +84,9 @@ class MapaViewModel(
         )
     }
 
-    // TODO Paso 6:
-    // fun seleccionar(id: Int?)
+    fun seleccionar(id: Int?) {
+        _seleccionado.value = id
+    }
 
     // TODO Paso 7:
     // val masCercano: StateFlow<Lugar?>

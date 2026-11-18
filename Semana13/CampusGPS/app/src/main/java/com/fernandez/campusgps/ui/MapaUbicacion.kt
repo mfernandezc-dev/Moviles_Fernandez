@@ -15,10 +15,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,18 +29,19 @@ import org.maplibre.compose.overlay.MapOverlay
 import org.maplibre.compose.overlay.include
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.spatialk.geojson.Position
+import androidx.compose.runtime.LaunchedEffect
+import org.maplibre.compose.camera.CameraUpdate
 
 @Composable
 fun MapaUbicacion(
     latitud: Double,
     longitud: Double,
-    lugares: List<Lugar>
+    lugares: List<Lugar>,
+    seleccionadoId: Int?,
+    onSeleccionar: (Int) -> Unit,
+    modifier: Modifier = Modifier.height(300.dp)
 ) {
 
-    // Guarda el identificador del marcador seleccionado.
-    var lugarSeleccionado by remember {
-        mutableStateOf<Int?>(null)
-    }
 
     // Configura el mapa utilizando OpenFreeMap.
     val estadoMapa = rememberMapState(
@@ -60,11 +57,29 @@ fun MapaUbicacion(
         )
     )
 
+    LaunchedEffect(seleccionadoId) {
+
+        val lugar = lugares.firstOrNull {
+            it.id == seleccionadoId
+        }
+
+        if (lugar != null) {
+
+            estadoMapa.animateCamera(
+                update = CameraUpdate(
+                    center = Position(
+                        latitude = lugar.latitud,
+                        longitude = lugar.longitud
+                    ),
+                    zoom = 17.0
+                )
+            )
+        }
+    }
+
     // Muestra el mapa interactivo.
     MaplibreMap(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp),
+        modifier = modifier.fillMaxWidth(),
         state = estadoMapa
     ) {
 
@@ -74,7 +89,7 @@ fun MapaUbicacion(
         // Recorre los cinco lugares del campus.
         lugares.forEach { lugar ->
 
-            val seleccionado = lugarSeleccionado == lugar.id
+            val seleccionado = seleccionadoId == lugar.id
 
             // Coloca el marcador en las coordenadas del lugar.
             Column(
@@ -129,9 +144,7 @@ fun MapaUbicacion(
                             shape = CircleShape
                         )
                         .clickable {
-                            lugarSeleccionado =
-                                if (seleccionado) null
-                                else lugar.id
+                            onSeleccionar(lugar.id)
                         }
                 )
             }
