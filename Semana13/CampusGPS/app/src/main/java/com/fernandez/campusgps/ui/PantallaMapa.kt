@@ -60,6 +60,8 @@ fun PantallaMapa(
     val lugares by vm.lugaresFiltrados.collectAsState()
     val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
     val radioSeleccionado by vm.radioSeleccionado.collectAsState()
+    val modoOscuroMapa by vm.modoOscuroMapa.collectAsState()
+    val mensajeEstiloMapa by vm.mensajeEstiloMapa.collectAsState()
     val seleccionado by vm.seleccionado.collectAsState()
     val masCercano by vm.masCercano.collectAsState()
 
@@ -210,6 +212,50 @@ fun PantallaMapa(
                     }
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Estilo del mapa",
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.widthIn(max = 104.dp)
+                    )
+                    LazyRow(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(items = listOf(false, true), key = { it }) { oscuro ->
+                            FilterChip(
+                                selected = modoOscuroMapa == oscuro,
+                                onClick = { vm.seleccionarModoMapa(oscuro) },
+                                label = { Text(if (oscuro) "Oscuro" else "Claro") },
+                                shape = RoundedCornerShape(50),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                    }
+                }
+
+                mensajeEstiloMapa?.let { mensaje ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ) {
+                        Text(
+                            text = mensaje,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 when (val actual = estado) {
@@ -244,6 +290,8 @@ fun PantallaMapa(
                             seleccionadoId = seleccionado,
                             masCercanoId = masCercano?.id,
                             radioMetros = radioSeleccionado,
+                            modoOscuro = modoOscuroMapa,
+                            onErrorEstilo = vm::notificarErrorEstiloMapa,
                             onSeleccionar = { id -> vm.seleccionar(id) },
                             modifier = Modifier.height(alturaMapa)
                         )

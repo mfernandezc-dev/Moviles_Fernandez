@@ -55,6 +55,14 @@ class MapaViewModel(
 
     val radioSeleccionado: StateFlow<Int> = _radioSeleccionado.asStateFlow()
 
+    private val _modoOscuroMapa = MutableStateFlow(false)
+
+    val modoOscuroMapa: StateFlow<Boolean> = _modoOscuroMapa.asStateFlow()
+
+    private val _mensajeEstiloMapa = MutableStateFlow<String?>(null)
+
+    val mensajeEstiloMapa: StateFlow<String?> = _mensajeEstiloMapa.asStateFlow()
+
     val lugaresFiltrados: StateFlow<List<LugarConDistancia>> =
         combine(lugares, categoriaSeleccionada, radioSeleccionado) { lista, categoria, radio ->
             filtrarLugares(lista, categoria, radio)
@@ -142,6 +150,25 @@ class MapaViewModel(
 
         _radioSeleccionado.value = radio
         seleccionar(_seleccionado.value)
+    }
+
+    fun seleccionarModoMapa(oscuro: Boolean) {
+        _mensajeEstiloMapa.value = null
+        _modoOscuroMapa.value = oscuro
+    }
+
+    fun notificarErrorEstiloMapa(oscuro: Boolean) {
+        // Ignora fallos de un modo que el usuario ya dejó de solicitar.
+        if (oscuro != _modoOscuroMapa.value) return
+
+        _mensajeEstiloMapa.value = if (oscuro) {
+            "No se pudo cargar el estilo oscuro. Se intentará cargar el estilo claro."
+        } else {
+            "No se pudo cargar el estilo claro. Comprueba tu conexión y cambia de estilo para reintentar."
+        }
+        if (oscuro) {
+            _modoOscuroMapa.value = false
+        }
     }
 
     private fun filtrarLugares(

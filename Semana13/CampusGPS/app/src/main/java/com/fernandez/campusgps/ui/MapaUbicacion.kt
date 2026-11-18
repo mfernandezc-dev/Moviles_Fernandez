@@ -17,7 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,6 +36,7 @@ import com.fernandez.campusgps.ui.theme.VerdeCercano
 
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.map.StyleLoadState
 import org.maplibre.compose.map.rememberMapState
 import org.maplibre.compose.overlay.MapOverlay
 import org.maplibre.compose.overlay.include
@@ -61,6 +65,8 @@ fun MapaUbicacion(
     masCercanoId: Int?,
     onSeleccionar: (Int) -> Unit,
     radioMetros: Int = 500,
+    modoOscuro: Boolean = false,
+    onErrorEstilo: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier.height(300.dp)
 ) {
 
@@ -68,11 +74,16 @@ fun MapaUbicacion(
         GeoJsonData.Features(crearCirculoGeografico(latitud, longitud, radioMetros))
     }
 
-    // Configura el mapa utilizando OpenFreeMap.
+    val estiloSeleccionado = remember(modoOscuro) {
+        BaseStyle.Uri(
+            if (modoOscuro) "https://tiles.openfreemap.org/styles/dark"
+            else "https://tiles.openfreemap.org/styles/liberty"
+        )
+    }
+
+    // Actualiza solo el estilo de OpenFreeMap; conserva la misma instancia y cámara.
     val estadoMapa = rememberMapState(
-        baseStyle = BaseStyle.Uri(
-            "https://tiles.openfreemap.org/styles/liberty"
-        ),
+        baseStyle = estiloSeleccionado,
         initialCameraPosition = CameraPosition(
             center = Position(
                 latitude = latitud,
@@ -96,6 +107,16 @@ fun MapaUbicacion(
             color = const(AzulPrincipal),
             width = const(2.dp)
         )
+    }
+
+    val notificarErrorActual by rememberUpdatedState(onErrorEstilo)
+    LaunchedEffect(estadoMapa, estiloSeleccionado) {
+        snapshotFlow { estadoMapa.style.baseStyle to estadoMapa.style.loadState }
+            .collect { (estilo, carga) ->
+                if (estilo == estiloSeleccionado && carga is StyleLoadState.Failed) {
+                    notificarErrorActual(modoOscuro)
+                }
+            }
     }
 
     LaunchedEffect(seleccionadoId) {
