@@ -31,6 +31,7 @@ fun PantallaMapa(
 ) {
 
     val estado by vm.estado.collectAsState()
+    val lugares by vm.lugares.collectAsState()
 
     val contexto = LocalContext.current
 
@@ -140,7 +141,8 @@ fun PantallaMapa(
 
                 MapaUbicacion(
                     latitud = actual.posicion.latitud,
-                    longitud = actual.posicion.longitud
+                    longitud = actual.posicion.longitud,
+                    lugares = lugares.map { it.lugar }
                 )
             }
 
