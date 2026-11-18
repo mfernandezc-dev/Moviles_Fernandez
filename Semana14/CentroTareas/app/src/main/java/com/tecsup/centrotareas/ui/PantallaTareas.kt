@@ -66,6 +66,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                     Button(onClick = viewModel::tocar) { Text("Tócame") }
                     Text("Toques: $toques")
                 }
+                Button(onClick = viewModel::tareaLargaMala) { Text("Tarea larga (MAL)") }
                 Text(mensaje)
             }
             Tarjeta("Contar números primos") {

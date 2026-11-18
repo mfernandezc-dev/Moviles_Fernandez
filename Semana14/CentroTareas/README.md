@@ -20,3 +20,13 @@ La plantilla inicial no compilaba: Core 1.19.1 y Lifecycle 2.11.0 exigían API 3
 Se ajustan sus versiones para conservar el SDK instalado, Compose y Material 3.
 Las evidencias visuales y pruebas de interacción se registrarán al ejecutarse;
 no se consideran aprobadas por la sola compilación.
+
+## Observación técnica del paso 1
+
+El evento del botón se ejecuta en el hilo principal. `Thread.sleep(4000)` lo
+bloquea: no puede procesar toques ni dibujar cuadros durante cuatro segundos.
+Aunque el estado cambie a «Trabajando...», Compose no puede dibujarlo antes del
+bloqueo; cuando vuelve a renderizar, el estado ya dice «Terminó».
+Si el bloqueo durara diez segundos podría producir un ANR (Application Not
+Responding), según los límites del sistema y los eventos pendientes.
+Esta es una explicación técnica del código, no una prueba manual ejecutada.
