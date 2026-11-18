@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,6 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.tecsup.centrotareas.model.PrimosUi
+import com.tecsup.centrotareas.ui.theme.ExitoFondo
+import com.tecsup.centrotareas.ui.theme.ExitoTexto
 import com.tecsup.centrotareas.viewmodel.TareasViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +47,8 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val mensaje by viewModel.mensaje.collectAsState()
     val progreso by viewModel.progreso.collectAsState()
     val corriendo by viewModel.corriendo.collectAsState()
+    val primos by viewModel.primos.collectAsState()
+    val calculando = primos is PrimosUi.Calculando
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -88,9 +94,29 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                     label = { Text("Hasta qué número") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
+                    enabled = !calculando,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Text("Listo para calcular; disponible en el paso 5")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { limite.toIntOrNull()?.takeIf { it >= 2 }?.let(viewModel::contar) },
+                        enabled = !calculando && (limite.toIntOrNull() ?: 0) >= 2
+                    ) { Text("Contar") }
+                    OutlinedButton(
+                        onClick = viewModel::cancelarPrimos,
+                        enabled = calculando,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                    ) { Text("Cancelar") }
+                }
+                when (val estado = primos) {
+                    PrimosUi.Inicial -> Text("Ingresa un número mayor o igual que 2")
+                    PrimosUi.Calculando -> Text("Calculando...")
+                    PrimosUi.Cancelado -> Text("Cálculo cancelado")
+                    is PrimosUi.Listo -> RecuadroExito {
+                        Text("Primos encontrados: ${estado.cantidad}")
+                        Text("Tiempo: ${estado.milisegundos} ms")
+                    }
+                }
             }
             Tarjeta("Dos cargas") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -99,6 +125,20 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                 }
                 Text("Listo para cargar; disponible en el paso 6")
             }
+        }
+    }
+}
+
+@Composable
+private fun RecuadroExito(contenido: @Composable ColumnScope.() -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = ExitoFondo,
+        contentColor = ExitoTexto
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            contenido()
         }
     }
 }
