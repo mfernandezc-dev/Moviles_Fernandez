@@ -1,5 +1,8 @@
 package com.tecsup.centrotareas.model
 
+// Dato del cálculo, independiente de los estados visuales.
+data class AvancePrimos(val progreso: Float, val cantidad: Int)
+
 sealed interface PrimosUi {
     data object Inicial : PrimosUi
     data object Calculando : PrimosUi

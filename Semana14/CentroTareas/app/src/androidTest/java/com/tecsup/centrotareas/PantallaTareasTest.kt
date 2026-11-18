@@ -80,6 +80,27 @@ class PantallaTareasTest {
     }
 
     @Test
+    fun progresoDePrimosVisibleYCancelable() {
+        compose.onNodeWithText("Hasta qué número").performScrollTo()
+            .performTextReplacement("20000000")
+        Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Contar").performScrollTo().performClick()
+        compose.waitUntil(10000) { vm.progresoPrimos.value > 0f }
+        assertTrue(vm.primos.value is PrimosUi.Calculando)
+        assertTrue(vm.progresoPrimos.value < 1f)
+        compose.onNodeWithText("Avance de primos:", substring = true).performScrollTo()
+        captura("06-progreso-primos")
+        compose.onAllNodesWithText("Cancelar")[1].performScrollTo().assertIsEnabled().performClick()
+        compose.waitUntil(3000) { vm.primos.value is PrimosUi.Cancelado }
+        val conservado = vm.progresoPrimos.value
+        assertTrue(conservado > 0f && conservado < 1f)
+        compose.onNodeWithText("Contar").performScrollTo().performClick()
+        compose.runOnIdle { assertTrue(vm.progresoPrimos.value < conservado) }
+        compose.onAllNodesWithText("Cancelar")[1].performScrollTo().performClick()
+        compose.waitUntil(3000) { vm.primos.value is PrimosUi.Cancelado }
+    }
+
+    @Test
     fun cargasConTiemposReales() {
         compose.onNodeWithText("Una por una").performScrollTo().performClick()
         compose.onNodeWithText("Una por una").assertIsNotEnabled()
@@ -154,7 +175,7 @@ class PantallaTareasTest {
     private fun captura(nombre: String) {
         compose.waitForIdle()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val carpeta = File(instrumentation.targetContext.getExternalFilesDir(null), "evidencias/main")
+        val carpeta = File(instrumentation.targetContext.getExternalFilesDir(null), "evidencias/con-ia")
         check(carpeta.mkdirs() || carpeta.isDirectory)
         val imagen = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         File(carpeta, "$nombre.png").outputStream().use {

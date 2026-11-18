@@ -52,6 +52,28 @@ class TareasRepositoryLocalTest {
     }
 
     @Test
+    fun primosEmiteAvanceAcotadoYResultadoCorrecto() = runTest {
+        val avances = repo.contarPrimosConProgreso(500000).toList()
+        assertEquals(101, avances.size)
+        assertEquals(0f, avances.first().progreso)
+        assertEquals(1f, avances.last().progreso)
+        assertEquals(41538, avances.last().cantidad)
+        assertTrue(avances.all { it.progreso in 0f..1f })
+        assertTrue(avances.zipWithNext().all { (a, b) ->
+            b.progreso > a.progreso && b.cantidad >= a.cantidad
+        })
+    }
+
+    @Test
+    fun cancelarFlujoDePrimosPermiteReiniciar() = runTest {
+        val parcial = repo.contarPrimosConProgreso(500000).take(5).toList()
+        assertTrue(parcial.last().progreso < 1f)
+        val reinicio = repo.contarPrimosConProgreso(100).toList()
+        assertEquals(0f, reinicio.first().progreso)
+        assertEquals(25, reinicio.last().cantidad)
+    }
+
+    @Test
     fun cancelaUnCalculoGrande() = runTest {
         withContext(Dispatchers.Default) {
             val iniciado = CompletableDeferred<Unit>()
