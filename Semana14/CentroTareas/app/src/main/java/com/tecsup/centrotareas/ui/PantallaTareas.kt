@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -36,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.tecsup.centrotareas.model.PrimosUi
+import com.tecsup.centrotareas.model.CargaUi
 import com.tecsup.centrotareas.ui.theme.ExitoFondo
 import com.tecsup.centrotareas.ui.theme.ExitoTexto
 import com.tecsup.centrotareas.viewmodel.TareasViewModel
@@ -49,6 +51,8 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val corriendo by viewModel.corriendo.collectAsState()
     val primos by viewModel.primos.collectAsState()
     val calculando = primos is PrimosUi.Calculando
+    val carga by viewModel.carga.collectAsState()
+    val cargando = carga is CargaUi.Cargando
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -120,10 +124,29 @@ fun PantallaTareas(viewModel: TareasViewModel) {
             }
             Tarjeta("Dos cargas") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = {}, enabled = false) { Text("Una por una") }
-                    OutlinedButton(onClick = {}, enabled = false) { Text("A la vez") }
+                    Button(onClick = viewModel::cargarUnaPorUna, enabled = !cargando) {
+                        Text("Una por una")
+                    }
+                    OutlinedButton(
+                        onClick = viewModel::cargarALaVez,
+                        enabled = !cargando,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                    ) { Text("A la vez") }
                 }
-                Text("Listo para cargar; disponible en el paso 6")
+                when (val estado = carga) {
+                    CargaUi.Inicial -> Text("Compara las cargas secuencial y paralela")
+                    CargaUi.Cargando -> {
+                        CircularProgressIndicator()
+                        Text("Cargando...")
+                    }
+                    is CargaUi.Exito -> RecuadroExito {
+                        Text("Modo: ${estado.modo}")
+                        Text("Perfil: ${estado.perfil}")
+                        Text("Pedidos: ${estado.pedidos}")
+                        Text("Tiempo: ${estado.milisegundos} ms")
+                    }
+                    is CargaUi.Error -> Text(estado.mensaje)
+                }
             }
         }
     }
