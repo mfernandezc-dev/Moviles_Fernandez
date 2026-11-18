@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -58,6 +59,7 @@ fun PantallaMapa(
     val estado by vm.estado.collectAsState()
     val lugares by vm.lugaresFiltrados.collectAsState()
     val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
+    val radioSeleccionado by vm.radioSeleccionado.collectAsState()
     val seleccionado by vm.seleccionado.collectAsState()
     val masCercano by vm.masCercano.collectAsState()
 
@@ -179,6 +181,35 @@ fun PantallaMapa(
                     }
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Radio de búsqueda",
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.widthIn(max = 104.dp)
+                    )
+                    LazyRow(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(items = vm.radiosDisponibles, key = { it }) { radio ->
+                            FilterChip(
+                                selected = radio == radioSeleccionado,
+                                onClick = { vm.seleccionarRadio(radio) },
+                                label = { Text("$radio m") },
+                                shape = RoundedCornerShape(50),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
 
                 when (val actual = estado) {
@@ -212,6 +243,7 @@ fun PantallaMapa(
                             lugares = lugares.map { it.lugar },
                             seleccionadoId = seleccionado,
                             masCercanoId = masCercano?.id,
+                            radioMetros = radioSeleccionado,
                             onSeleccionar = { id -> vm.seleccionar(id) },
                             modifier = Modifier.height(alturaMapa)
                         )
@@ -248,15 +280,26 @@ fun PantallaMapa(
                             )
                         }
 
-                        ListaLugares(
-                            lugares = lugares,
-                            seleccionado = seleccionado,
-                            masCercanoId = masCercano?.id,
-                            onClick = { id -> vm.seleccionar(id) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(alturaLista)
-                        )
+                        if (lugares.isEmpty()) {
+                            Text(
+                                text = "No hay lugares dentro del radio seleccionado",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp)
+                            )
+                        } else {
+                            ListaLugares(
+                                lugares = lugares,
+                                seleccionado = seleccionado,
+                                masCercanoId = masCercano?.id,
+                                onClick = { id -> vm.seleccionar(id) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(alturaLista)
+                            )
+                        }
                     }
 
                     is UbicacionUi.Error -> {

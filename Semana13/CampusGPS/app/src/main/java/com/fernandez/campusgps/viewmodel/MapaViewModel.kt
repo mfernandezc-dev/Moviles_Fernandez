@@ -49,13 +49,19 @@ class MapaViewModel(
     val categoriaSeleccionada: StateFlow<String> =
         _categoriaSeleccionada.asStateFlow()
 
+    val radiosDisponibles: List<Int> = listOf(100, 200, 500)
+
+    private val _radioSeleccionado = MutableStateFlow(500)
+
+    val radioSeleccionado: StateFlow<Int> = _radioSeleccionado.asStateFlow()
+
     val lugaresFiltrados: StateFlow<List<LugarConDistancia>> =
-        combine(lugares, categoriaSeleccionada) { lista, categoria ->
-            filtrarLugares(lista, categoria)
+        combine(lugares, categoriaSeleccionada, radioSeleccionado) { lista, categoria, radio ->
+            filtrarLugares(lista, categoria, radio)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = _lugares.value
+            initialValue = emptyList()
         )
 
     private val _seleccionado =
@@ -99,6 +105,9 @@ class MapaViewModel(
                 )
             }
             .sortedBy { it.metros }
+
+        // Una nueva posición puede dejar la selección anterior fuera del radio.
+        seleccionar(_seleccionado.value)
     }
 
     fun permisoDenegado() {
@@ -109,9 +118,13 @@ class MapaViewModel(
     }
 
     fun seleccionar(id: Int?) {
-        // Valida contra la categoría actual incluso si un clic llega durante el cambio de filtro.
+        // Valida ambos filtros incluso si un clic llega durante un cambio de categoría o radio.
         _seleccionado.value = id?.takeIf { candidato ->
-            filtrarLugares(_lugares.value, _categoriaSeleccionada.value).any {
+            filtrarLugares(
+                _lugares.value,
+                _categoriaSeleccionada.value,
+                _radioSeleccionado.value
+            ).any {
                 it.lugar.id == candidato
             }
         }
@@ -120,23 +133,25 @@ class MapaViewModel(
     fun seleccionarCategoria(categoria: String) {
         if (categoria !in categorias || categoria == _categoriaSeleccionada.value) return
 
-        val seleccionSigueVisible = filtrarLugares(_lugares.value, categoria).any {
-            it.lugar.id == _seleccionado.value
-        }
-        if (!seleccionSigueVisible) {
-            _seleccionado.value = null
-        }
-
         _categoriaSeleccionada.value = categoria
+        seleccionar(_seleccionado.value)
+    }
+
+    fun seleccionarRadio(radio: Int) {
+        if (radio !in radiosDisponibles || radio == _radioSeleccionado.value) return
+
+        _radioSeleccionado.value = radio
+        seleccionar(_seleccionado.value)
     }
 
     private fun filtrarLugares(
         lista: List<LugarConDistancia>,
-        categoria: String
-    ): List<LugarConDistancia> =
-        if (categoria == categorias.first()) lista else lista.filter {
-            it.lugar.categoria == categoria
-        }
+        categoria: String,
+        radio: Int
+    ): List<LugarConDistancia> = lista.filter { item ->
+        (categoria == categorias.first() || item.lugar.categoria == categoria) &&
+                (item.metros?.let { it <= radio } == true)
+    }
 
     val masCercano: StateFlow<Lugar?> = lugaresFiltrados
         .map { lista ->
