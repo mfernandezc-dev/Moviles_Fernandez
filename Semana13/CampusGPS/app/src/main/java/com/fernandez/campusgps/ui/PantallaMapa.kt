@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.fernandez.campusgps.model.UbicacionUi
 import com.fernandez.campusgps.viewmodel.MapaViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 
 @Composable
 fun PantallaMapa(
@@ -31,6 +33,46 @@ fun PantallaMapa(
     val estado by vm.estado.collectAsState()
 
     val contexto = LocalContext.current
+
+    val lanzadorPermisos = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { resultado ->
+
+        val permisoConcedido = resultado.values.any { it }
+
+        if (permisoConcedido) {
+            vm.buscar()
+        } else {
+            vm.permisoDenegado()
+        }
+    }
+
+    fun solicitarUbicacion() {
+
+        val permisoFine = ContextCompat.checkSelfPermission(
+            contexto,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val permisoCoarse = ContextCompat.checkSelfPermission(
+            contexto,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (permisoFine || permisoCoarse) {
+
+            vm.buscar()
+
+        } else {
+
+            lanzadorPermisos.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -51,28 +93,10 @@ fun PantallaMapa(
 
         Button(
             onClick = {
-
-                val permisoFine =
-                    ContextCompat.checkSelfPermission(
-                        contexto,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-
-                val permisoCoarse =
-                    ContextCompat.checkSelfPermission(
-                        contexto,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
-
-                if (permisoFine || permisoCoarse) {
-                    vm.buscar()
-                } else {
-                    vm.permisoDenegado()
-                }
+                solicitarUbicacion()
             },
             enabled = estado != UbicacionUi.Buscando
         ) {
-
             Text("Obtener mi ubicación")
         }
 
