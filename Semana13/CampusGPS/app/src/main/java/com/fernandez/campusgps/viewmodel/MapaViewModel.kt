@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.fernandez.campusgps.model.Posicion
+import com.fernandez.campusgps.util.distanciaMetros
 
 class MapaViewModel(
     private val ubicacionRepo: UbicacionRepository,
@@ -44,11 +46,11 @@ class MapaViewModel(
         viewModelScope.launch {
 
             ubicacionRepo.obtenerPosicion()
-                .onSuccess {
-                    _estado.value = UbicacionUi.Lista(it)
+                .onSuccess { posicion ->
 
-                    // TODO Paso 5:
-                    // actualizarDistancias(it)
+                    actualizarDistancias(posicion)
+
+                    _estado.value = UbicacionUi.Lista(posicion)
                 }
                 .onFailure {
                     _estado.value = UbicacionUi.Error(
@@ -56,6 +58,24 @@ class MapaViewModel(
                     )
                 }
         }
+    }
+
+    private fun actualizarDistancias(posicion: Posicion) {
+
+        _lugares.value = lugaresRepo.obtenerLugares()
+            .map { lugar ->
+
+                val distancia = distanciaMetros(
+                    desde = posicion,
+                    hasta = lugar
+                )
+
+                LugarConDistancia(
+                    lugar = lugar,
+                    metros = distancia
+                )
+            }
+            .sortedBy { it.metros }
     }
 
     fun permisoDenegado() {
