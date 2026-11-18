@@ -72,7 +72,7 @@ Studio, incluidos manifiesto, recursos y Wrapper; no se creó otro proyecto.
 ## 4. Arquitectura MVVM
 
 ```text
-PantallaTareas ──eventos──> TareasViewModel ──suspend──> TareasRepository
+PantallaTareas ──eventos──> TareasViewModel ──suspend/Flow──> TareasRepository
       ↑                         │                           ↑
       └──── collectAsState() ───┘                 TareasRepositoryLocal
                 StateFlow                          implementación
@@ -85,7 +85,8 @@ visual. No se realizan cálculos pesados en un composable.
 
 ## 5. Funcionamiento del Repository
 
-`TareasRepository` define contar primos, cargar perfil y cargar pedidos. Su
+`TareasRepository` define contar primos, cargar perfil y cargar pedidos; en
+`con-ia` también expone los Flows de progreso de tarea y primos. Su
 implementación local devuelve `Ana Torres (ficticia)` después de 2000 ms y
 tres pedidos después de 3000 ms. Con error activado, pedidos lanza
 `IOException("Sin conexión")`. Son simulaciones con `delay`, no llamadas de red;
@@ -93,10 +94,13 @@ no necesitan permisos, clientes HTTP ni servicios externos.
 
 ## 6. Corrutinas
 
-Los eventos lanzan corrutinas en `viewModelScope`. El trabajo de CPU utiliza
-`withContext(Dispatchers.Default)`. `delay` suspende sin ocupar un hilo durante
+Los eventos lanzan corrutinas en `viewModelScope`. En main el trabajo de CPU usa
+`withContext(Dispatchers.Default)`; en con-ia el productor usa
+`flowOn(Dispatchers.Default)`. `delay` suspende sin ocupar un hilo durante
 la espera. Los logs de etiqueta `HILO` registran antes, dentro y después del
-cambio de contexto. Los tres trabajos son independientes: cancelar progreso
+cambio de contexto en main. En con-ia se conservan Antes y Después en Main;
+el bucle está en el repositorio y ya no existe el log Dentro del ViewModel.
+Los tres trabajos son independientes: cancelar progreso
 no cancela primos ni cargas.
 
 ## 7. StateFlow
@@ -115,6 +119,12 @@ Cada publicación del estado se despacha a Main para evitar reentradas de la
 interfaz durante la rotación en el entorno instrumentado de Compose.
 El contador Tócame sigue disponible mientras se ejecuta la tarea.
 
+En **con-ia**, el repositorio implementa `progresoTarea(): Flow<Float>` con
+`flow { emit(...) }` y `flowOn(Dispatchers.Default)`. Cada colección comienza
+en 0 y emite los 100 avances. El ViewModel solo recoge el Flow en Main y
+actualiza su StateFlow, sin contener el bucle ni sus esperas. La cancelación
+del Job cancela también el productor y el nuevo inicio crea otra colección.
+
 ## 9. Cancelación
 
 `trabajo: Job?` conserva la tarea. El inicio comprueba si ya hay un trabajo activo
@@ -126,12 +136,21 @@ Primos tiene su propio Job y su botón de cancelación.
 
 ## 10. Cálculo de primos
 
-El repositorio recorre `2..hasta` en `Dispatchers.Default` y ejecuta
+En ambas ramas el repositorio recorre `2..hasta` en `Dispatchers.Default` y ejecuta
 `ensureActive()` en cada iteración. La función `esPrimo` comprueba divisores
 hasta la raíz usando `d.toLong() * d <= n` para evitar desbordamiento.
 El ViewModel mide con `System.currentTimeMillis()` y publica cantidad y tiempo.
 La UI y el ViewModel ignoran límites menores que 2; la UI rechaza textos no
 convertibles a Int, incluidos números fuera de rango.
+
+En con-ia, `contarPrimosConProgreso` devuelve `Flow<AvancePrimos>`, con avance
+y cantidad acumulada. `AvancePrimos` es un dato del cálculo, no un estado de
+pantalla. Se emite como máximo una actualización por porcentaje entero, más
+el 0 inicial, para no publicar un evento por número. El porcentaje usa Long
+para el producto y el denominador. `contarPrimos(hasta)` sigue disponible y
+reutiliza ese mismo algoritmo tomando la cantidad de la última emisión.
+La UI muestra una segunda barra y porcentaje; conserva el avance al cancelar
+y lo reinicia a cero al volver a contar. `ensureActive()` permanece en el ciclo.
 
 Resultados comprobados por la prueba JVM que llama al repositorio real:
 
@@ -180,6 +199,8 @@ Este comportamiento histórico se explica a partir del código; **no se ejecutó
 manualmente aquella versión**. Desde el paso 2 se eliminó del código Kotlin.
 
 ## 15. Pruebas realizadas
+
+### Fase 1 — main
 
 Ejecutadas el **18 de noviembre de 2026** en Windows y en el emulador
 **Medium_Phone, Android 17 / API 37**, conectado como `emulator-5554`.
@@ -236,6 +257,34 @@ con TalkBack y fuentes grandes, otros tamaños/API, y demostración histórica d
 congelamiento. No se comprobó persistencia tras muerte del proceso (fuera del
 alcance); ViewModel no equivale a almacenamiento persistente. Las imágenes de
 referencia originales siguen sin estar disponibles para una comparación exacta.
+
+### Fase 2 — con-ia
+
+Ejecutada en el mismo entorno, después de cada mejora: compilación debug y
+suite completa. Resultado final: **8 pruebas JVM y 7 instrumentadas aprobadas**.
+Además de la regresión de las tres tarjetas, se verificaron:
+
+- Flow de progreso: 101 emisiones ordenadas, límites 0 y 1 y nueva colección
+  desde cero después de cancelar.
+- Flow de primos: 101 emisiones para 500000, avance creciente, 41538 primos,
+  cancelación, reinicio y conservación de los cinco resultados de la guía.
+- Progreso de primos visible durante un cálculo de 20000000, cancelación por
+  botón, porcentaje conservado y reinicio desde cero.
+- Tabla inicialmente sin medidas, actualización independiente de cada modo,
+  coincidencia con los tiempos de Exito y conservación de ambas medidas
+  después de un error posterior.
+- Rotación, contador Tócame, validación de entrada, progreso al 100 %, errores
+  y reintentos también se ejecutaron en la versión mejorada.
+- Última repetición directa del runner: **7 tests OK**; cargas reales de
+  **5004 ms** y **3001 ms**, visibles en la captura de comparación.
+- Lint final: **0 errores, 19 advertencias**, las mismas categorías ya descritas.
+
+Una primera prueba de cancelación con 2000000 terminó el cálculo antes de
+pulsar Cancelar tras tomar la captura y agotó la espera del test. Se aumentó
+solo la entrada de prueba a 20000000 y se comprobó que el botón estuviera
+habilitado antes de pulsarlo. Pasaron después la suite completa y la repetición
+directa, sin introducir esperas artificiales en el algoritmo de producción.
+Se mantienen las pruebas manuales pendientes indicadas arriba.
 
 ## 16. Capturas de evidencias
 
@@ -307,12 +356,45 @@ La Fase 1 sigue nueve commits reales y consecutivos, en este orden:
 Ubicación: `Moviles_Fernandez/Semana14/CentroTareas`. Los commits del laboratorio
 no incluyen archivos de otras semanas ni cambios en `Semana14/Lab14`.
 
-La Fase 2 requiere una decisión previa: ya existía una rama `con-ia`, local y
-remota, con trabajo de otros laboratorios (punta inspeccionada: `52fbaa7`).
-No se sobrescribe ni se reinicia. Crear desde main otra rama con ese mismo
-nombre, conservar la existente intacta y obtener solo cuatro commits adicionales
-son condiciones incompatibles sin resolver primero esa ocupación del nombre.
-No se han iniciado mejoras ni creado PROMPTS.md en main.
+### Integración de la rama con-ia existente
+
+La rama con-ia ya existía en `52fbaa7`, con 20 commits exclusivos de laboratorios
+anteriores. El usuario indicó conservarla, sin renombrar, eliminar, forzar ni
+reescribir commits. La previsualización `git merge-tree` detectó 28 conflictos
+add/add ajenos: 9 en CafeCampus, 12 en Catalogo y 7 en CampusGPS. Se detuvo la
+integración y se solicitó autorización antes de tocar esos archivos.
+
+Con la autorización explícita **«Autorizar merge selectivo»**, se realizó un
+merge de dos padres usando la estrategia `ours` sin confirmar y se incorporó
+exclusivamente CentroTareas desde main. Se verificó que todos los archivos
+fuera del proyecto permanecieran exactamente como en `52fbaa7` y que el
+proyecto importado coincidiera con main antes del commit de integración:
+
+`28228eb merge: incorpora CentroTareas desde main conservando otros laboratorios`
+
+Sus padres son la antigua con-ia (`52fbaa7`) y main (`29fc0f7`): los nueve commits
+de CentroTareas son ancestros de con-ia, y main no se modificó después de su
+publicación. A ese merge se agregan estos cuatro commits independientes:
+
+1. `feat(ia): mueve el progreso al Repository usando Flow`
+2. `feat(ia): agrega progreso al calculo de numeros primos`
+3. `feat(ia): agrega comparacion de tiempos de carga`
+4. `docs(ia): documenta prompts y mejoras realizadas`
+
+En consecuencia, `git log main..con-ia --oneline` incluye también los 20 commits
+históricos y el merge: no se oculta esa diferencia ni se afirma que muestre
+solamente cuatro commits. Para inspeccionar **solo esta Fase 2**, usar desde
+CentroTareas:
+
+```powershell
+git log 28228eb..con-ia --oneline
+git diff main..con-ia -- .
+git diff 52fbaa7..con-ia -- .
+```
+
+El diff global entre main y con-ia seguirá mostrando diferencias antiguas en
+otros laboratorios. No son cambios realizados en esta sesión. La comparación
+contra `52fbaa7` fuera de CentroTareas debe estar vacía.
 
 ## 19. Conclusiones
 
@@ -322,3 +404,36 @@ ViewModel administra el ciclo de vida, cancelación y estados observables. La
 concurrencia estructurada reduce las cargas independientes de unos cinco a
 tres segundos y propaga fallos de forma controlada. Compilar, medir y probar
 rotación detectó problemas que una revisión estática no habría demostrado.
+
+## 20. Comparación entre ramas y evidencias de las mejoras
+
+| Aspecto | main: guía original | con-ia: tres mejoras |
+| --- | --- | --- |
+| Progreso de tarea | Bucle y delay en ViewModel | Flow frío en Repository, flowOn(Default) y collect en ViewModel |
+| Primos | suspend devuelve cantidad; estados de cálculo | Flow de datos de avance, segunda barra y porcentaje; API suspend conservada |
+| Tiempos de carga | Solo el resultado de la última operación | Última medida exitosa de cada modo en una tabla, sin valores prefijados |
+| Arquitectura | MVVM + Repository + StateFlow | Misma separación; Repository produce datos, ViewModel mantiene estados UI |
+| Documentación IA | Asistencia reconocida en README | README ampliado y [PROMPTS.md](PROMPTS.md) con interacciones reales |
+| Verificación | 4 JVM y 6 instrumentadas | 8 JVM y 7 instrumentadas |
+
+Las medidas están en StateFlow del ViewModel: sobreviven a rotación, no a la
+muerte del proceso ni a una nueva sesión. «Sin medir» significa que ese modo
+aún no terminó con éxito; un error no reemplaza ni inventa una medida.
+
+Capturas reales adicionales de con-ia, sin editar:
+
+![Avance de primos durante el cálculo](capturas/con-ia/06-progreso-primos.png)
+![Comparación con tiempos medidos](capturas/con-ia/07-comparacion-tiempos.png)
+
+Para demostrar las dos versiones en Android Studio, sin cambios pendientes:
+
+```powershell
+git checkout main
+# Sincronizar Gradle y ejecutar: guía original.
+git checkout con-ia
+# Sincronizar Gradle y ejecutar: versión mejorada.
+```
+
+No se fusionó con-ia hacia main. Ambas contienen el proyecto completo y no
+dependen de archivos exclusivos de la otra rama. El merge selectivo autorizado
+solo integra main hacia con-ia y conserva el resto de su árbol histórico.
