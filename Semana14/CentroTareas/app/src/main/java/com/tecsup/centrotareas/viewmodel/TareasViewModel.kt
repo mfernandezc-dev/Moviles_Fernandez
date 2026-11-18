@@ -9,14 +9,11 @@ import com.tecsup.centrotareas.model.PrimosUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     private val _toques = MutableStateFlow(0)
@@ -59,15 +56,8 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
                 _progreso.value = 0f
                 _mensaje.value = "Trabajando..."
                 Log.d("HILO", "Antes: ${Thread.currentThread().name}")
-                withContext(Dispatchers.Default) {
-                    for (i in 1..100) {
-                        delay(40)
-                        // Publicar en Main evita reentradas de la UI durante una rotación.
-                        withContext(Dispatchers.Main.immediate) {
-                            _progreso.value = i / 100f
-                        }
-                    }
-                    Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
+                repo.progresoTarea().collect { avance ->
+                    _progreso.value = avance
                 }
                 Log.d("HILO", "Después: ${Thread.currentThread().name}")
                 _mensaje.value = "Terminó"

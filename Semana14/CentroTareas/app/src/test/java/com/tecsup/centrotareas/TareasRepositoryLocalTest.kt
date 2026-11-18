@@ -6,6 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -15,6 +17,23 @@ import org.junit.Test
 
 class TareasRepositoryLocalTest {
     private val repo = TareasRepositoryLocal()
+
+    @Test
+    fun progresoCompletoOrdenadoDesdeRepository() = runTest {
+        val avances = repo.progresoTarea().toList()
+        assertEquals(101, avances.size)
+        assertEquals(0f, avances.first())
+        assertEquals(1f, avances.last())
+        assertTrue(avances.zipWithNext().all { (anterior, siguiente) -> siguiente >= anterior })
+    }
+
+    @Test
+    fun cancelarFlujoNoAfectaElSiguienteInicio() = runTest {
+        val primera = repo.progresoTarea().take(6).toList()
+        val reinicio = repo.progresoTarea().take(2).toList()
+        assertTrue(primera.last() < 1f)
+        assertEquals(listOf(0f, 0.01f), reinicio)
+    }
 
     @Test
     fun cuentaLosCincoValoresDeLaGuia() = runTest {

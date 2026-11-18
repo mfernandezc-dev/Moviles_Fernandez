@@ -4,9 +4,20 @@ import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class TareasRepositoryLocal : TareasRepository {
+    override fun progresoTarea(): Flow<Float> = flow {
+        emit(0f)
+        for (i in 1..100) {
+            delay(40)
+            emit(i / 100f)
+        }
+    }.flowOn(Dispatchers.Default)
+
     override suspend fun contarPrimos(hasta: Int): Int = withContext(Dispatchers.Default) {
         var cantidad = 0
         for (n in 2..hasta) {
