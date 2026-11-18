@@ -55,6 +55,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
-    implementation("com.google.maps.android:maps-compose:8.4.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+    implementation("org.maplibre.compose:maplibre-compose:0.20.0")
+    runtimeOnly("org.maplibre.compose:maplibre-compose-runtime-opengl-android:0.20.0")
 }
