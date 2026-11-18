@@ -127,11 +127,20 @@ fun PantallaMapa(
             is UbicacionUi.Lista -> {
 
                 Text(
-                    "Latitud: ${actual.posicion.latitud}"
+                    text = "Latitud: ${actual.posicion.latitud}"
                 )
 
                 Text(
-                    "Longitud: ${actual.posicion.longitud}"
+                    text = "Longitud: ${actual.posicion.longitud}"
+                )
+
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
+
+                MapaUbicacion(
+                    latitud = actual.posicion.latitud,
+                    longitud = actual.posicion.longitud
                 )
             }
 
