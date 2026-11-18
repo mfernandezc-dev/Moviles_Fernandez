@@ -102,6 +102,8 @@ class PantallaTareasTest {
 
     @Test
     fun cargasConTiemposReales() {
+        assertEquals(null, vm.tiemposCarga.value.unaPorUna)
+        assertEquals(null, vm.tiemposCarga.value.aLaVez)
         compose.onNodeWithText("Una por una").performScrollTo().performClick()
         compose.onNodeWithText("Una por una").assertIsNotEnabled()
         compose.onNodeWithText("A la vez").assertIsNotEnabled()
@@ -111,6 +113,8 @@ class PantallaTareasTest {
         assertEquals("Ana Torres (ficticia)", secuencial.perfil)
         assertEquals(3, secuencial.pedidos)
         assertTrue("Tiempo secuencial: ${secuencial.milisegundos}", secuencial.milisegundos in 4800..12000)
+        assertEquals(secuencial.milisegundos, vm.tiemposCarga.value.unaPorUna)
+        assertEquals(null, vm.tiemposCarga.value.aLaVez)
         compose.onNodeWithText("Tiempo: ${secuencial.milisegundos} ms").performScrollTo()
         captura("04a-carga-secuencial")
         compose.onNodeWithText("A la vez").performScrollTo().performClick()
@@ -120,9 +124,20 @@ class PantallaTareasTest {
         assertEquals(3, paralela.pedidos)
         assertTrue("Tiempo paralelo: ${paralela.milisegundos}", paralela.milisegundos in 2800..10000)
         assertTrue(paralela.milisegundos < secuencial.milisegundos)
+        assertEquals(secuencial.milisegundos, vm.tiemposCarga.value.unaPorUna)
+        assertEquals(paralela.milisegundos, vm.tiemposCarga.value.aLaVez)
         println("TIEMPOS_REALES secuencial=${secuencial.milisegundos} paralelo=${paralela.milisegundos}")
         compose.onNodeWithText("Tiempo: ${paralela.milisegundos} ms").performScrollTo()
         captura("04b-carga-paralela")
+        compose.onNodeWithText("Última carga exitosa de cada modo en esta sesión.").performScrollTo()
+        compose.onNodeWithText("${secuencial.milisegundos} ms").assertTextEquals("${secuencial.milisegundos} ms")
+        compose.onNodeWithText("${paralela.milisegundos} ms").assertTextEquals("${paralela.milisegundos} ms")
+        captura("07-comparacion-tiempos")
+        compose.onNodeWithContentDescription("Simular error").performScrollTo().performClick()
+        compose.onNodeWithText("A la vez").performScrollTo().performClick()
+        compose.waitUntil(12000) { vm.carga.value is CargaUi.Error }
+        assertEquals(secuencial.milisegundos, vm.tiemposCarga.value.unaPorUna)
+        assertEquals(paralela.milisegundos, vm.tiemposCarga.value.aLaVez)
     }
 
     @Test

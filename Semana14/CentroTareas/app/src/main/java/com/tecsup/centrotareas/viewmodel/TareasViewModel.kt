@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.tecsup.centrotareas.data.TareasRepository
 import com.tecsup.centrotareas.model.CargaUi
 import com.tecsup.centrotareas.model.PrimosUi
+import com.tecsup.centrotareas.model.TiemposCarga
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +39,9 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     private val _carga = MutableStateFlow<CargaUi>(CargaUi.Inicial)
     val carga: StateFlow<CargaUi> = _carga.asStateFlow()
     private var trabajoCarga: Job? = null
+
+    private val _tiemposCarga = MutableStateFlow(TiemposCarga())
+    val tiemposCarga: StateFlow<TiemposCarga> = _tiemposCarga.asStateFlow()
 
     private val _simularError = MutableStateFlow(false)
     val simularError: StateFlow<Boolean> = _simularError.asStateFlow()
@@ -125,11 +129,17 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
                     val perfil = repo.cargarPerfil()
                     perfil to repo.cargarPedidos(provocarError)
                 }
+                val duracion = System.currentTimeMillis() - inicio
+                _tiemposCarga.value = if (paralela) {
+                    _tiemposCarga.value.copy(aLaVez = duracion)
+                } else {
+                    _tiemposCarga.value.copy(unaPorUna = duracion)
+                }
                 _carga.value = CargaUi.Exito(
                     modo = if (paralela) "A la vez" else "Una por una",
                     perfil = perfil,
                     pedidos = pedidos.size,
-                    milisegundos = System.currentTimeMillis() - inicio
+                    milisegundos = duracion
                 )
             } catch (cancelacion: CancellationException) {
                 throw cancelacion

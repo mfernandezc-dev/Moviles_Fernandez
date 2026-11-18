@@ -17,6 +17,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
@@ -58,6 +59,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val carga by viewModel.carga.collectAsState()
     val cargando = carga is CargaUi.Cargando
     val simularError by viewModel.simularError.collectAsState()
+    val tiemposCarga by viewModel.tiemposCarga.collectAsState()
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -185,6 +187,23 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         ) { Text("Reintentar") }
                     }
                 }
+                HorizontalDivider()
+                Text("Comparación de tiempos", style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Modo", style = MaterialTheme.typography.labelLarge)
+                    Text("Tiempo real", style = MaterialTheme.typography.labelLarge)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Secuencial")
+                    Text(tiemposCarga.unaPorUna?.let { "$it ms" } ?: "Sin medir")
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Paralela")
+                    Text(tiemposCarga.aLaVez?.let { "$it ms" } ?: "Sin medir")
+                }
+                Text("Última carga exitosa de cada modo en esta sesión.",
+                    style = MaterialTheme.typography.bodySmall)
             }
         }
     }
