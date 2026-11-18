@@ -25,6 +25,8 @@ import com.fernandez.campusgps.viewmodel.MapaViewModel
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.OutlinedButton
+import com.fernandez.campusgps.util.formatearDistancia
 
 @Composable
 fun PantallaMapa(
@@ -34,6 +36,7 @@ fun PantallaMapa(
     val estado by vm.estado.collectAsState()
     val lugares by vm.lugares.collectAsState()
     val seleccionado by vm.seleccionado.collectAsState()
+    val masCercano by vm.masCercano.collectAsState()
 
     val contexto = LocalContext.current
 
@@ -146,6 +149,7 @@ fun PantallaMapa(
                     longitud = actual.posicion.longitud,
                     lugares = lugares.map { it.lugar },
                     seleccionadoId = seleccionado,
+                    masCercanoId = masCercano?.id,
                     onSeleccionar = { id ->
                         vm.seleccionar(id)
                     },
@@ -155,6 +159,28 @@ fun PantallaMapa(
                 Spacer(
                     modifier = Modifier.height(12.dp)
                 )
+                OutlinedButton(
+                    onClick = {
+                        masCercano?.let { lugar ->
+                            vm.seleccionar(lugar.id)
+                        }
+                    },
+                    enabled = masCercano != null
+                ) {
+                    Text("Ir al más cercano")
+                }
+                masCercano?.let { lugar ->
+
+                    val distancia = lugares.firstOrNull {
+                        it.lugar.id == lugar.id
+                    }?.metros
+
+                    Text(
+                        text = "Más cercano: ${lugar.nombre} " +
+                                "(${distancia?.let { formatearDistancia(it) } ?: "Sin calcular"})",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
                 ListaLugares(
                     lugares = lugares,

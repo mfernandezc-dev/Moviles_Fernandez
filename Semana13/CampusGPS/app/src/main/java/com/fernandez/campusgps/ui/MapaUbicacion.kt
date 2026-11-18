@@ -38,6 +38,7 @@ fun MapaUbicacion(
     longitud: Double,
     lugares: List<Lugar>,
     seleccionadoId: Int?,
+    masCercanoId: Int?,
     onSeleccionar: (Int) -> Unit,
     modifier: Modifier = Modifier.height(300.dp)
 ) {
@@ -140,7 +141,11 @@ fun MapaUbicacion(
                             shape = CircleShape
                         )
                         .background(
-                            color = Color(0xFF2196F3),
+                            color = if (lugar.id == masCercanoId) {
+                                Color(0xFF4CAF50)
+                            } else {
+                                Color(0xFF2196F3)
+                            },
                             shape = CircleShape
                         )
                         .clickable {
