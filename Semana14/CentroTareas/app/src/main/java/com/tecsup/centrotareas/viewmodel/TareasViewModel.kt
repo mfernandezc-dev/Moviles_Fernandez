@@ -21,6 +21,9 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     private val _mensaje = MutableStateFlow("Listo para iniciar")
     val mensaje: StateFlow<String> = _mensaje.asStateFlow()
 
+    private val _progreso = MutableStateFlow(0f)
+    val progreso: StateFlow<Float> = _progreso.asStateFlow()
+
     private val _primos = MutableStateFlow<PrimosUi>(PrimosUi.Inicial)
     val primos: StateFlow<PrimosUi> = _primos.asStateFlow()
 
@@ -33,10 +36,14 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
 
     fun tareaLarga() {
         viewModelScope.launch {
+            _progreso.value = 0f
             _mensaje.value = "Trabajando..."
             Log.d("HILO", "Antes: ${Thread.currentThread().name}")
             withContext(Dispatchers.Default) {
-                delay(4000)
+                for (i in 1..100) {
+                    delay(40)
+                    _progreso.value = i / 100f
+                }
                 Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
             }
             Log.d("HILO", "Después: ${Thread.currentThread().name}")

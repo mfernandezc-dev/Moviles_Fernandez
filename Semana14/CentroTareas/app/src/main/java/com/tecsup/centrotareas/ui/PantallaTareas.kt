@@ -17,6 +17,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -40,6 +41,7 @@ import com.tecsup.centrotareas.viewmodel.TareasViewModel
 fun PantallaTareas(viewModel: TareasViewModel) {
     val toques by viewModel.toques.collectAsState()
     val mensaje by viewModel.mensaje.collectAsState()
+    val progreso by viewModel.progreso.collectAsState()
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -66,7 +68,9 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                     Button(onClick = viewModel::tocar) { Text("Tócame") }
                     Text("Toques: $toques")
                 }
-                Button(onClick = viewModel::tareaLarga) { Text("Tarea larga") }
+                Button(onClick = viewModel::tareaLarga) { Text("Iniciar") }
+                LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
+                Text("${(progreso * 100).toInt()} %")
                 Text(mensaje)
             }
             Tarjeta("Contar números primos") {
