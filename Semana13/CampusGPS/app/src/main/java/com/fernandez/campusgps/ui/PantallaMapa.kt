@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -26,6 +28,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -52,7 +56,8 @@ fun PantallaMapa(
 ) {
 
     val estado by vm.estado.collectAsState()
-    val lugares by vm.lugares.collectAsState()
+    val lugares by vm.lugaresFiltrados.collectAsState()
+    val categoriaSeleccionada by vm.categoriaSeleccionada.collectAsState()
     val seleccionado by vm.seleccionado.collectAsState()
     val masCercano by vm.masCercano.collectAsState()
 
@@ -155,6 +160,26 @@ fun PantallaMapa(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
+
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(items = vm.categorias, key = { it }) { categoria ->
+                        FilterChip(
+                            selected = categoria == categoriaSeleccionada,
+                            onClick = { vm.seleccionarCategoria(categoria) },
+                            label = { Text(categoria) },
+                            shape = RoundedCornerShape(50),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 when (val actual = estado) {
                     UbicacionUi.Inicial -> {

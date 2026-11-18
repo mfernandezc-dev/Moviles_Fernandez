@@ -9,6 +9,7 @@ import com.fernandez.campusgps.model.UbicacionUi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import com.fernandez.campusgps.model.Posicion
 import com.fernandez.campusgps.util.distanciaMetros
@@ -39,6 +40,23 @@ class MapaViewModel(
 
     val lugares: StateFlow<List<LugarConDistancia>> =
         _lugares.asStateFlow()
+
+    val categorias: List<String> =
+        listOf("Todos", "Estudio", "Comida", "Eventos", "Servicios")
+
+    private val _categoriaSeleccionada = MutableStateFlow(categorias.first())
+
+    val categoriaSeleccionada: StateFlow<String> =
+        _categoriaSeleccionada.asStateFlow()
+
+    val lugaresFiltrados: StateFlow<List<LugarConDistancia>> =
+        combine(lugares, categoriaSeleccionada) { lista, categoria ->
+            filtrarLugares(lista, categoria)
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = _lugares.value
+        )
 
     private val _seleccionado =
         MutableStateFlow<Int?>(null)
@@ -91,10 +109,36 @@ class MapaViewModel(
     }
 
     fun seleccionar(id: Int?) {
-        _seleccionado.value = id
+        // Valida contra la categoría actual incluso si un clic llega durante el cambio de filtro.
+        _seleccionado.value = id?.takeIf { candidato ->
+            filtrarLugares(_lugares.value, _categoriaSeleccionada.value).any {
+                it.lugar.id == candidato
+            }
+        }
     }
 
-    val masCercano: StateFlow<Lugar?> = lugares
+    fun seleccionarCategoria(categoria: String) {
+        if (categoria !in categorias || categoria == _categoriaSeleccionada.value) return
+
+        val seleccionSigueVisible = filtrarLugares(_lugares.value, categoria).any {
+            it.lugar.id == _seleccionado.value
+        }
+        if (!seleccionSigueVisible) {
+            _seleccionado.value = null
+        }
+
+        _categoriaSeleccionada.value = categoria
+    }
+
+    private fun filtrarLugares(
+        lista: List<LugarConDistancia>,
+        categoria: String
+    ): List<LugarConDistancia> =
+        if (categoria == categorias.first()) lista else lista.filter {
+            it.lugar.categoria == categoria
+        }
+
+    val masCercano: StateFlow<Lugar?> = lugaresFiltrados
         .map { lista ->
 
             lista.firstOrNull {
