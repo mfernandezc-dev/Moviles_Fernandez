@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -17,10 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 import com.fernandez.campusgps.model.Lugar
+import com.fernandez.campusgps.ui.theme.AzulPrincipal
+import com.fernandez.campusgps.ui.theme.Blanco
+import com.fernandez.campusgps.ui.theme.RojoUbicacion
+import com.fernandez.campusgps.ui.theme.VerdeCercano
 
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.map.MaplibreMap
@@ -80,12 +87,27 @@ fun MapaUbicacion(
 
     // Muestra el mapa interactivo.
     MaplibreMap(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp)),
         state = estadoMapa
     ) {
 
         // Conserva los controles y atribuciones del mapa.
         include(MapOverlay.Default)
+
+        // Representa la posición recibida sin cambiar la cámara ni solicitar otra ubicación.
+        Box(
+            modifier = Modifier
+                .placedAt(
+                    position = Position(latitude = latitud, longitude = longitud),
+                    alignment = Alignment.Center
+                )
+                .size(28.dp)
+                .background(RojoUbicacion, CircleShape)
+                .border(3.dp, Blanco, CircleShape)
+                .semantics { contentDescription = "Tu ubicación actual" }
+        )
 
         // Recorre los cinco lugares del campus.
         lugares.forEach { lugar ->
@@ -108,6 +130,7 @@ fun MapaUbicacion(
                 if (seleccionado) {
 
                     Surface(
+                        modifier = Modifier.widthIn(max = 200.dp),
                         shape = RoundedCornerShape(8.dp),
                         color = MaterialTheme.colorScheme.surface,
                         shadowElevation = 4.dp
@@ -130,26 +153,33 @@ fun MapaUbicacion(
                     }
                 }
 
-                // Dibuja el marcador azul.
+                // Mantiene el verde del más cercano y el azul de los demás lugares.
                 Box(
                     modifier = Modifier
                         .padding(top = 4.dp)
                         .size(24.dp)
                         .border(
                             width = 2.dp,
-                            color = Color.White,
+                            color = Blanco,
                             shape = CircleShape
                         )
                         .background(
                             color = if (lugar.id == masCercanoId) {
-                                Color(0xFF4CAF50)
+                                VerdeCercano
                             } else {
-                                Color(0xFF2196F3)
+                                AzulPrincipal
                             },
                             shape = CircleShape
                         )
                         .clickable {
                             onSeleccionar(lugar.id)
+                        }
+                        .semantics {
+                            contentDescription = if (lugar.id == masCercanoId) {
+                                "${lugar.nombre}, lugar más cercano"
+                            } else {
+                                lugar.nombre
+                            }
                         }
                 )
             }

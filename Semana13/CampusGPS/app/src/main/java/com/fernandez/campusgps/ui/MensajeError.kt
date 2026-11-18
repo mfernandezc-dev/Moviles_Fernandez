@@ -4,12 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.dp
 
 import com.fernandez.campusgps.model.TipoError
 import com.fernandez.campusgps.model.UbicacionUi
+import com.fernandez.campusgps.ui.theme.Blanco
 
 @Composable
 fun MensajeError(
@@ -53,7 +56,13 @@ fun MensajeError(
 
             TipoError.PERMISO_DENEGADO -> {
 
-                Button(
+                OutlinedButton(
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Blanco,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
                     onClick = {
 
                         val intent = Intent(
@@ -76,7 +85,13 @@ fun MensajeError(
             TipoError.SIN_PLAY_SERVICES,
             TipoError.DESCONOCIDO -> {
 
-                Button(
+                OutlinedButton(
+                    shape = RoundedCornerShape(50),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        containerColor = Blanco,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
                     onClick = onReintentar
                 ) {
                     Text("Reintentar")

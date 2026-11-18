@@ -2,15 +2,34 @@ package com.fernandez.campusgps.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -18,15 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.fernandez.campusgps.model.UbicacionUi
-import com.fernandez.campusgps.viewmodel.MapaViewModel
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.OutlinedButton
+import com.fernandez.campusgps.ui.theme.AzulPrincipal
+import com.fernandez.campusgps.ui.theme.Blanco
 import com.fernandez.campusgps.util.formatearDistancia
+import com.fernandez.campusgps.viewmodel.MapaViewModel
 
 @Composable
 fun PantallaMapa(
@@ -80,128 +98,149 @@ fun PantallaMapa(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-
-        Text(
-            text = "CampusGPS",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(
-            modifier = Modifier.height(24.dp)
-        )
-
-        Button(
-            onClick = {
-                solicitarUbicacion()
-            },
-            enabled = estado != UbicacionUi.Buscando
-        ) {
-            Text("Obtener mi ubicación")
-        }
-
-        Spacer(
-            modifier = Modifier.height(24.dp)
-        )
-
-        when (val actual = estado) {
-
-            UbicacionUi.Inicial -> {
-
-                Text(
-                    "Presiona el botón para obtener tu ubicación"
-                )
-            }
-
-            UbicacionUi.Buscando -> {
-
-                CircularProgressIndicator()
-
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
-
-                Text("Buscando ubicación...")
-            }
-
-            is UbicacionUi.Lista -> {
-
-                Text(
-                    text = "Latitud: ${actual.posicion.latitud}"
-                )
-
-                Text(
-                    text = "Longitud: ${actual.posicion.longitud}"
-                )
-
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
-
-                MapaUbicacion(
-                    latitud = actual.posicion.latitud,
-                    longitud = actual.posicion.longitud,
-                    lugares = lugares.map { it.lugar },
-                    seleccionadoId = seleccionado,
-                    masCercanoId = masCercano?.id,
-                    onSeleccionar = { id ->
-                        vm.seleccionar(id)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
-                OutlinedButton(
-                    onClick = {
-                        masCercano?.let { lugar ->
-                            vm.seleccionar(lugar.id)
-                        }
-                    },
-                    enabled = masCercano != null
-                ) {
-                    Text("Ir al más cercano")
-                }
-                masCercano?.let { lugar ->
-
-                    val distancia = lugares.firstOrNull {
-                        it.lugar.id == lugar.id
-                    }?.metros
-
-                    Text(
-                        text = "Más cercano: ${lugar.nombre} " +
-                                "(${distancia?.let { formatearDistancia(it) } ?: "Sin calcular"})",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                ListaLugares(
-                    lugares = lugares,
-                    seleccionado = seleccionado,
-                    onClick = { id ->
-                        vm.seleccionar(id)
-                    },
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets.safeDrawing,
+        topBar = {
+            Surface(color = AzulPrincipal, contentColor = Blanco) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(220.dp)
-                )
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                            )
+                        )
+                ) {
+                    Text(
+                        text = "CampusGPS",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                    )
+                }
             }
+        }
+    ) { paddingPantalla ->
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingPantalla)
+        ) {
+            // En pantallas bajas el contenido puede desplazarse sin recortar controles.
+            val alturaMapa = (maxHeight * 0.43f).coerceAtLeast(240.dp)
+            val alturaLista = (maxHeight * 0.24f).coerceIn(160.dp, 220.dp)
 
-            is UbicacionUi.Error -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Button(
+                    modifier = Modifier
+                        .widthIn(min = 220.dp)
+                        .heightIn(min = 48.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AzulPrincipal,
+                        contentColor = Blanco
+                    ),
+                    onClick = { solicitarUbicacion() },
+                    enabled = estado != UbicacionUi.Buscando
+                ) {
+                    Text("Obtener mi ubicación")
+                }
 
-                MensajeError(
-                    error = actual,
-                    onReintentar = {
-                        solicitarUbicacion()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when (val actual = estado) {
+                    UbicacionUi.Inicial -> {
+                        Text("Presiona el botón para obtener tu ubicación")
                     }
-                )
+
+                    UbicacionUi.Buscando -> {
+                        CircularProgressIndicator()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Buscando ubicación...")
+                    }
+
+                    is UbicacionUi.Lista -> {
+                        Text(
+                            text = "Latitud: ${actual.posicion.latitud}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Longitud: ${actual.posicion.longitud}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        MapaUbicacion(
+                            latitud = actual.posicion.latitud,
+                            longitud = actual.posicion.longitud,
+                            lugares = lugares.map { it.lugar },
+                            seleccionadoId = seleccionado,
+                            masCercanoId = masCercano?.id,
+                            onSeleccionar = { id -> vm.seleccionar(id) },
+                            modifier = Modifier.height(alturaMapa)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        OutlinedButton(
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = Blanco,
+                                contentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            onClick = {
+                                masCercano?.let { lugar -> vm.seleccionar(lugar.id) }
+                            },
+                            enabled = masCercano != null
+                        ) {
+                            Text("Ir al más cercano")
+                        }
+
+                        masCercano?.let { lugar ->
+                            val distancia = lugares.firstOrNull {
+                                it.lugar.id == lugar.id
+                            }?.metros
+
+                            Text(
+                                text = "Más cercano: ${lugar.nombre} " +
+                                        "(${distancia?.let { formatearDistancia(it) } ?: "Sin calcular"})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        ListaLugares(
+                            lugares = lugares,
+                            seleccionado = seleccionado,
+                            masCercanoId = masCercano?.id,
+                            onClick = { id -> vm.seleccionar(id) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(alturaLista)
+                        )
+                    }
+
+                    is UbicacionUi.Error -> {
+                        MensajeError(
+                            error = actual,
+                            onReintentar = { solicitarUbicacion() }
+                        )
+                    }
+                }
             }
         }
     }
