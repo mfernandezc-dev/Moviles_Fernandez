@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
@@ -101,6 +102,24 @@ class PantallaTareasTest {
         println("TIEMPOS_REALES secuencial=${secuencial.milisegundos} paralelo=${paralela.milisegundos}")
         compose.onNodeWithText("Pedidos: 3").performScrollTo()
         captura("04b-carga-paralela")
+    }
+
+    @Test
+    fun erroresEnAmbosModosYReintento() {
+        compose.onNodeWithContentDescription("Simular error").performScrollTo().performClick()
+        compose.onNodeWithText("Una por una").performScrollTo().performClick()
+        compose.waitUntil(15000) { vm.carga.value is CargaUi.Error }
+        compose.onNodeWithText("No se pudo cargar: Sin conexión").performScrollTo()
+            .assertTextEquals("No se pudo cargar: Sin conexión")
+        compose.onNodeWithText("Reintentar").performScrollTo().performClick()
+        compose.waitUntil(12000) { vm.carga.value is CargaUi.Error }
+        compose.onNodeWithText("No se pudo cargar: Sin conexión").performScrollTo()
+        captura("05-error-simulado")
+        compose.onNodeWithContentDescription("Simular error").performScrollTo().performClick()
+        compose.onNodeWithText("Reintentar").performScrollTo().performClick()
+        compose.waitUntil(12000) { vm.carga.value is CargaUi.Exito }
+        assertEquals("A la vez", (vm.carga.value as CargaUi.Exito).modo)
+        compose.onNodeWithText("Pedidos: 3").performScrollTo().assertTextEquals("Pedidos: 3")
     }
 
     @Test

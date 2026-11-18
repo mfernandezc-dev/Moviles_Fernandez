@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LinearProgressIndicator
@@ -35,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.tecsup.centrotareas.model.PrimosUi
 import com.tecsup.centrotareas.model.CargaUi
@@ -53,6 +56,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val calculando = primos is PrimosUi.Calculando
     val carga by viewModel.carga.collectAsState()
     val cargando = carga is CargaUi.Cargando
+    val simularError by viewModel.simularError.collectAsState()
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -123,6 +127,19 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                 }
             }
             Tarjeta("Dos cargas") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Simular error")
+                    Switch(
+                        checked = simularError,
+                        onCheckedChange = viewModel::cambiarSimularError,
+                        enabled = !cargando,
+                        modifier = Modifier.semantics { contentDescription = "Simular error" }
+                    )
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = viewModel::cargarUnaPorUna, enabled = !cargando) {
                         Text("Una por una")
@@ -145,7 +162,20 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                         Text("Pedidos: ${estado.pedidos}")
                         Text("Tiempo: ${estado.milisegundos} ms")
                     }
-                    is CargaUi.Error -> Text(estado.mensaje)
+                    is CargaUi.Error -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ) {
+                            Text(estado.mensaje, modifier = Modifier.padding(12.dp))
+                        }
+                        OutlinedButton(
+                            onClick = viewModel::cargarALaVez,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                        ) { Text("Reintentar") }
+                    }
                 }
             }
         }

@@ -40,6 +40,13 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     val carga: StateFlow<CargaUi> = _carga.asStateFlow()
     private var trabajoCarga: Job? = null
 
+    private val _simularError = MutableStateFlow(false)
+    val simularError: StateFlow<Boolean> = _simularError.asStateFlow()
+
+    fun cambiarSimularError(valor: Boolean) {
+        _simularError.value = valor
+    }
+
     fun tocar() {
         _toques.value += 1
     }
@@ -55,7 +62,10 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
                 withContext(Dispatchers.Default) {
                     for (i in 1..100) {
                         delay(40)
-                        _progreso.value = i / 100f
+                        // Publicar en Main evita reentradas de la UI durante una rotación.
+                        withContext(Dispatchers.Main.immediate) {
+                            _progreso.value = i / 100f
+                        }
                     }
                     Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
                 }
@@ -105,23 +115,30 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
         if (trabajoCarga?.isActive == true) return
         trabajoCarga = viewModelScope.launch {
             _carga.value = CargaUi.Cargando
-            val inicio = System.currentTimeMillis()
-            val (perfil, pedidos) = if (paralela) {
-                coroutineScope {
-                    val perfilPendiente = async { repo.cargarPerfil() }
-                    val pedidosPendientes = async { repo.cargarPedidos(false) }
-                    perfilPendiente.await() to pedidosPendientes.await()
+            val provocarError = _simularError.value
+            try {
+                val inicio = System.currentTimeMillis()
+                val (perfil, pedidos) = if (paralela) {
+                    coroutineScope {
+                        val perfilPendiente = async { repo.cargarPerfil() }
+                        val pedidosPendientes = async { repo.cargarPedidos(provocarError) }
+                        perfilPendiente.await() to pedidosPendientes.await()
+                    }
+                } else {
+                    val perfil = repo.cargarPerfil()
+                    perfil to repo.cargarPedidos(provocarError)
                 }
-            } else {
-                val perfil = repo.cargarPerfil()
-                perfil to repo.cargarPedidos(false)
+                _carga.value = CargaUi.Exito(
+                    modo = if (paralela) "A la vez" else "Una por una",
+                    perfil = perfil,
+                    pedidos = pedidos.size,
+                    milisegundos = System.currentTimeMillis() - inicio
+                )
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
+            } catch (error: Exception) {
+                _carga.value = CargaUi.Error("No se pudo cargar: " + error.message)
             }
-            _carga.value = CargaUi.Exito(
-                modo = if (paralela) "A la vez" else "Una por una",
-                perfil = perfil,
-                pedidos = pedidos.size,
-                milisegundos = System.currentTimeMillis() - inicio
-            )
         }
     }
 }
