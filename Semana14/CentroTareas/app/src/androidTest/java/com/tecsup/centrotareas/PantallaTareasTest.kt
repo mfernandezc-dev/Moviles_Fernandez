@@ -90,7 +90,7 @@ class PantallaTareasTest {
         assertEquals("Ana Torres (ficticia)", secuencial.perfil)
         assertEquals(3, secuencial.pedidos)
         assertTrue("Tiempo secuencial: ${secuencial.milisegundos}", secuencial.milisegundos in 4800..12000)
-        compose.onNodeWithText("Pedidos: 3").performScrollTo()
+        compose.onNodeWithText("Tiempo: ${secuencial.milisegundos} ms").performScrollTo()
         captura("04a-carga-secuencial")
         compose.onNodeWithText("A la vez").performScrollTo().performClick()
         compose.waitUntil(12000) { vm.carga.value is CargaUi.Exito }
@@ -100,7 +100,7 @@ class PantallaTareasTest {
         assertTrue("Tiempo paralelo: ${paralela.milisegundos}", paralela.milisegundos in 2800..10000)
         assertTrue(paralela.milisegundos < secuencial.milisegundos)
         println("TIEMPOS_REALES secuencial=${secuencial.milisegundos} paralelo=${paralela.milisegundos}")
-        compose.onNodeWithText("Pedidos: 3").performScrollTo()
+        compose.onNodeWithText("Tiempo: ${paralela.milisegundos} ms").performScrollTo()
         captura("04b-carga-paralela")
     }
 
@@ -114,6 +114,7 @@ class PantallaTareasTest {
         compose.onNodeWithText("Reintentar").performScrollTo().performClick()
         compose.waitUntil(12000) { vm.carga.value is CargaUi.Error }
         compose.onNodeWithText("No se pudo cargar: Sin conexión").performScrollTo()
+        compose.onNodeWithText("Reintentar").performScrollTo()
         captura("05-error-simulado")
         compose.onNodeWithContentDescription("Simular error").performScrollTo().performClick()
         compose.onNodeWithText("Reintentar").performScrollTo().performClick()
