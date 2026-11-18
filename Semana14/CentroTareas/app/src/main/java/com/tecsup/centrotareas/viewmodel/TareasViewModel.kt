@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -24,6 +26,10 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     private val _progreso = MutableStateFlow(0f)
     val progreso: StateFlow<Float> = _progreso.asStateFlow()
 
+    private var trabajo: Job? = null
+    private val _corriendo = MutableStateFlow(false)
+    val corriendo: StateFlow<Boolean> = _corriendo.asStateFlow()
+
     private val _primos = MutableStateFlow<PrimosUi>(PrimosUi.Inicial)
     val primos: StateFlow<PrimosUi> = _primos.asStateFlow()
 
@@ -35,19 +41,32 @@ class TareasViewModel(private val repo: TareasRepository) : ViewModel() {
     }
 
     fun tareaLarga() {
-        viewModelScope.launch {
-            _progreso.value = 0f
-            _mensaje.value = "Trabajando..."
-            Log.d("HILO", "Antes: ${Thread.currentThread().name}")
-            withContext(Dispatchers.Default) {
-                for (i in 1..100) {
-                    delay(40)
-                    _progreso.value = i / 100f
+        if (trabajo?.isActive == true || _corriendo.value) return
+        trabajo = viewModelScope.launch {
+            _corriendo.value = true
+            try {
+                _progreso.value = 0f
+                _mensaje.value = "Trabajando..."
+                Log.d("HILO", "Antes: ${Thread.currentThread().name}")
+                withContext(Dispatchers.Default) {
+                    for (i in 1..100) {
+                        delay(40)
+                        _progreso.value = i / 100f
+                    }
+                    Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
                 }
-                Log.d("HILO", "Dentro: ${Thread.currentThread().name}")
+                Log.d("HILO", "Después: ${Thread.currentThread().name}")
+                _mensaje.value = "Terminó"
+            } catch (cancelacion: CancellationException) {
+                _mensaje.value = "Cancelado"
+                throw cancelacion
+            } finally {
+                _corriendo.value = false
             }
-            Log.d("HILO", "Después: ${Thread.currentThread().name}")
-            _mensaje.value = "Terminó"
         }
+    }
+
+    fun cancelar() {
+        trabajo?.cancel()
     }
 }

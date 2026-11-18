@@ -42,6 +42,7 @@ fun PantallaTareas(viewModel: TareasViewModel) {
     val toques by viewModel.toques.collectAsState()
     val mensaje by viewModel.mensaje.collectAsState()
     val progreso by viewModel.progreso.collectAsState()
+    val corriendo by viewModel.corriendo.collectAsState()
     var limite by rememberSaveable { mutableStateOf("100000") }
 
     Scaffold(
@@ -68,7 +69,14 @@ fun PantallaTareas(viewModel: TareasViewModel) {
                     Button(onClick = viewModel::tocar) { Text("Tócame") }
                     Text("Toques: $toques")
                 }
-                Button(onClick = viewModel::tareaLarga) { Text("Iniciar") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = viewModel::tareaLarga, enabled = !corriendo) { Text("Iniciar") }
+                    OutlinedButton(
+                        onClick = viewModel::cancelar,
+                        enabled = corriendo,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                    ) { Text("Cancelar") }
+                }
                 LinearProgressIndicator(progress = { progreso }, modifier = Modifier.fillMaxWidth())
                 Text("${(progreso * 100).toInt()} %")
                 Text(mensaje)
