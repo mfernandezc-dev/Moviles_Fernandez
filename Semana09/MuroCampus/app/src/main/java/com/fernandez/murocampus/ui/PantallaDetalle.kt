@@ -15,6 +15,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +34,18 @@ import com.fernandez.murocampus.viewmodel.UiState
 @Composable
 fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier = Modifier) {
     val estado by vm.detalle.collectAsStateWithLifecycle()
+    val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
+    var confirmar by rememberSaveable(idSeleccionado) { mutableStateOf(false) }
+    val eliminando = eliminacion is UiState.Cargando
+    if (confirmar) AlertDialog(
+        onDismissRequest = { if (!eliminando) confirmar = false },
+        title = { Text("Eliminar publicación") },
+        text = { Text("¿Deseas eliminar esta publicación?") },
+        dismissButton = { TextButton(enabled = !eliminando, onClick = { confirmar = false }) { Text("Cancelar") } },
+        confirmButton = {
+            TextButton(enabled = !eliminando, onClick = { confirmar = false; vm.eliminar(idSeleccionado) }) { Text("Eliminar") }
+        }
+    )
 
     when (val actual = estado) {
         UiState.Cargando -> Cargando(
@@ -72,6 +92,18 @@ fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier 
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
+                }
+                item(key = "eliminar") {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { confirmar = true }, enabled = !eliminando,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB3261E)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("Eliminar publicación") }
+                        if (eliminando) CircularProgressIndicator()
+                        val fallo = eliminacion as? UiState.Error
+                        if (fallo != null) Text(fallo.mensaje, color = MaterialTheme.colorScheme.error)
+                    }
                 }
                 items(items = datos.comentarios, key = { comentario -> comentario.id }) { comentario ->
                     Card(

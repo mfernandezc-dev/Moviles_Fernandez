@@ -49,6 +49,12 @@ class PostsViewModel(
     private var cargaDetalle: Job? = null
     private var versionDetalle = 0L
 
+    private val eliminados = mutableSetOf<Int>()
+    private val _eliminacion = MutableStateFlow<UiState<Unit>?>(null)
+    val eliminacion = _eliminacion.asStateFlow()
+    private var cargaEliminacion: Job? = null
+    private var versionEliminacion = 0L
+
     private val _creacion = MutableStateFlow<UiState<Post>?>(null)
     val creacion = _creacion.asStateFlow()
     private var cargaCreacion: Job? = null
@@ -74,7 +80,7 @@ class PostsViewModel(
             if (version != versionLista) return@launch
             resultado
                 .onSuccess { posts ->
-                    _lista.value = UiState.Exito(posts)
+                    _lista.value = UiState.Exito(excluirEliminados(posts))
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
@@ -93,6 +99,7 @@ class PostsViewModel(
 
     fun abrir(id: Int) {
         cerrarDetalle()
+        _eliminacion.value = null
         val version = versionDetalle
         _detalle.value = UiState.Cargando
         cargaDetalle = viewModelScope.launch {
@@ -114,9 +121,43 @@ class PostsViewModel(
     }
 
     fun cerrarDetalle() {
+        versionEliminacion++
+        cargaEliminacion?.cancel()
+        cargaEliminacion = null
         versionDetalle++
         cargaDetalle?.cancel()
         cargaDetalle = null
+    }
+
+    private fun excluirEliminados(posts: List<Post>): List<Post> =
+        if (eliminados.isEmpty()) posts else posts.filterNot { it.id in eliminados }
+
+    fun eliminar(id: Int) {
+        val actual = (_detalle.value as? UiState.Exito)?.datos ?: return
+        if (actual.post.id != id || id in eliminados || cargaEliminacion?.isActive == true) return
+        val version = ++versionEliminacion
+        _eliminacion.value = UiState.Cargando
+        cargaEliminacion = viewModelScope.launch {
+            try {
+                val resultado = repo.eliminar(id)
+                ensureActive()
+                if (version != versionEliminacion) return@launch
+                resultado.onSuccess {
+                    eliminados += id
+                    val listaActual = _lista.value
+                    if (listaActual is UiState.Exito) _lista.value = UiState.Exito(excluirEliminados(listaActual.datos))
+                    _eliminacion.value = UiState.Exito(Unit)
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _eliminacion.value = UiState.Error(mensajeDe(error))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ensureActive()
+                if (version == versionEliminacion) _eliminacion.value = UiState.Error(mensajeDe(e))
+            }
+        }
     }
 
     fun prepararCreacion() {

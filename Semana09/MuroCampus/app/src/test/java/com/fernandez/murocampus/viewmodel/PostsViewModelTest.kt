@@ -255,6 +255,7 @@ class PostsViewModelTest {
     private class OtroViewModel : ViewModel()
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         var llamadas = 0
         var respuesta: suspend () -> Result<List<Post>> = { Result.success(posts) }
 

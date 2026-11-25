@@ -5,6 +5,7 @@ import com.fernandez.murocampus.model.Comentario
 import com.fernandez.murocampus.model.NuevoPost
 import com.fernandez.murocampus.model.Post
 import kotlinx.coroutines.CancellationException
+import retrofit2.HttpException
 
 interface PostRepository {
 
@@ -17,11 +18,18 @@ interface PostRepository {
     suspend fun porUsuario(userId: Int): Result<List<Post>>
 
     suspend fun crear(nuevo: NuevoPost): Result<Post>
+
+    suspend fun eliminar(id: Int): Result<Unit>
 }
 
 class PostRepositoryRemote(
     private val api: PostApi
 ) : PostRepository {
+
+    override suspend fun eliminar(id: Int): Result<Unit> = llamar {
+        val respuesta = api.eliminar(id)
+        if (!respuesta.isSuccessful) throw HttpException(respuesta)
+    }
 
     override suspend fun listar(): Result<List<Post>> =
         llamar { api.listar() }

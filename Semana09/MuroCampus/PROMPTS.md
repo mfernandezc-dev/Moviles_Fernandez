@@ -54,3 +54,42 @@ El filtro de usuario descarga su conjunto mediante Query; la búsqueda solo deri
 una vista local por título. Por eso cambiar de filtro puede hacer un GET, pero
 escribir no. StateFlow del ViewModel sobrevive a la rotación, no a la muerte del
 proceso; no se promete persistencia permanente.
+
+## MEJORA B — Eliminación
+
+### Fragmentos reales del prompt maestro (secciones 19–29)
+
+> La nueva operación deberá utilizar Response<Unit> para comprobar explícitamente el resultado HTTP, tal como solicita la guía.
+> El ViewModel no debe conocer Response<Unit> ni HttpException.
+> No eliminar localmente antes de confirmar el éxito HTTP.
+> Aplicar esa exclusión a los resultados posteriores de listar y porUsuario.
+
+El usuario añadió posteriormente una autorización real para continuar tras el cambio
+externo: «Autorizo continuar sin integrar ese cambio externo en main local ni en
+con-ia, siempre que se compruebe que únicamente corresponde a documentación de MuroCampus».
+OpenCode verificó padre y diff; solo cambió el README remoto y no se integró.
+
+| Prompt que escribí | Qué respondió la IA | Qué cambié o descarté | Por qué |
+| --- | --- | --- | --- |
+| Secciones 20–22: DELETE, Result y estados independientes. | OpenCode implementó el contrato, comprobación HTTP en Repository y Job/versión propios en ViewModel. | Decisión del agente: registrar IDs solo después del éxito y aplicarlos también a respuestas de lista pendientes. | Evita desaparición optimista y reaparición por recarga de JSONPlaceholder. |
+| Secciones 23–28: diálogo, errores, pruebas y evidencia. | OpenCode incorporó confirmación, bloqueo de duplicados, retorno y mensaje de éxito; agregó 21 unitarias y 4 Compose. | El agente corrigió dos problemas de sus pruebas: sobrecarga ambigua de `Response.success` y un Proxy que envolvía IOException. Usó tipo explícito y fake de PostApi explícito. | Probar cancelación/excepción original sin alterar producción para satisfacer un test defectuoso. |
+| Autorización adicional: continuar sin integrar README externo. | OpenCode comprobó `544e1ca…` como hijo directo de `8a67a45…`, con un solo archivo documental. | No hubo pull, merge, rebase, reset ni push a main. | Respeta el trabajo externo y la base local exigida. |
+
+Archivos principales: `PostApi.kt`, `PostRepository.kt`, `PostsViewModel.kt`,
+`PantallaDetalle.kt`, `PantallaLista.kt`, `MainActivity.kt`; contrato y todos los
+fakes existentes adaptados con fallos explícitos para operaciones inesperadas.
+Nuevas suites: `EliminacionRepositoryTest`, `EliminacionViewModelTest`, `EliminacionTest`.
+
+Resultados: **200 unitarias, 50 instrumentadas**, cero fallos/errores/omitidas;
+assemble, lint (24 advertencias/0 errores) y repetición offline correctos. HTTP real
+desde MuroCampus: `DELETE /posts/1` → **200**, `{}`; cancelar no generó DELETE.
+Se verificó exclusión con búsqueda/filtros/recarga; id 2 falló offline y el reintento
+voluntario conectado fue exitoso. Registros completos externos; ajustes restaurados.
+
+Evidencias: [confirmación](evidencias/con-ia/eliminar-confirmacion.png),
+[éxito](evidencias/con-ia/eliminar-exito.png).
+
+Para sustentación: éxito HTTP y persistencia son garantías diferentes. JSONPlaceholder
+simula DELETE; el conjunto de IDs en el ViewModel evita reapariciones solo durante
+esa sesión. Cancelar un diálogo no inicia una corrutina ni llama al Repository.
+Todas estas decisiones corresponden al agente y requieren revisión del estudiante.

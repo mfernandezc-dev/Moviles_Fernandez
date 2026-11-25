@@ -294,6 +294,7 @@ class FiltroViewModelTest {
     private fun posts(userId: Int) = (1..10).map { n -> Post(userId, (userId - 1) * 10 + n, "Titulo $userId-$n", "Contenido $userId-$n") }
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         var llamadasLista = 0
         val usuarios = mutableListOf<Int>()
         var lista: suspend () -> Result<List<Post>> = { Result.success(todos) }

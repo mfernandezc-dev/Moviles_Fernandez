@@ -20,6 +20,8 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.DELETE
+import retrofit2.Response
 
 class PostApiTest {
     private val metodos = PostApi::class.java.declaredMethods.toList()
@@ -31,9 +33,9 @@ class PostApiTest {
 
     @Test
     fun exponeExactamenteLasCincoFuncionesObligatorias() {
-        assertEquals(5, metodos.size)
+        assertEquals(6, metodos.size)
         assertEquals(
-            setOf("listar", "detalle", "comentarios", "porUsuario", "crear"),
+            setOf("listar", "detalle", "comentarios", "porUsuario", "crear", "eliminar"),
             metodos.map { it.name }.toSet()
         )
     }
@@ -93,7 +95,8 @@ class PostApiTest {
         metodos.forEach { metodo ->
             val rutas = listOfNotNull(
                 metodo.getAnnotation(GET::class.java)?.value,
-                metodo.getAnnotation(POST::class.java)?.value
+                metodo.getAnnotation(POST::class.java)?.value,
+                metodo.getAnnotation(DELETE::class.java)?.value
             )
 
             assertEquals("${metodo.name} debe tener una operacion HTTP", 1, rutas.size)
@@ -121,7 +124,7 @@ class PostApiTest {
             listOf(Continuation::class.java),
             metodo("listar").parameterTypes.toList()
         )
-        listOf("detalle", "comentarios", "porUsuario").forEach { nombre ->
+        listOf("detalle", "comentarios", "porUsuario", "eliminar").forEach { nombre ->
             assertEquals(
                 listOf(Int::class.javaPrimitiveType, Continuation::class.java),
                 metodo(nombre).parameterTypes.toList()
@@ -137,6 +140,14 @@ class PostApiTest {
         assertRetornoLista("comentarios", Comentario::class.java)
         assertRetornoLista("porUsuario", Post::class.java)
         assertEquals(Post::class.java, retornoSuspend("crear"))
+        val respuesta = retornoSuspend("eliminar") as ParameterizedType
+        assertEquals(Response::class.java, respuesta.rawType)
+        assertEquals(Unit::class.java, sinComodin(respuesta.actualTypeArguments.single()))
+    }
+
+    @Test fun eliminarUsaDeleteConPathId() {
+        assertEquals("posts/{id}", metodo("eliminar").getAnnotation(DELETE::class.java)!!.value)
+        assertEquals("id", anotacionParametro<Path>("eliminar").value)
     }
 
     private fun metodo(nombre: String): Method = metodos.single { it.name == nombre }

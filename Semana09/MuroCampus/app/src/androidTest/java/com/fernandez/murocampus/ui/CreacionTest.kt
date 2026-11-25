@@ -212,6 +212,7 @@ class CreacionTest {
     }
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         val enviados = mutableListOf<NuevoPost>()
         val usuarios = mutableListOf<Int>()
         var llamadasLista = 0

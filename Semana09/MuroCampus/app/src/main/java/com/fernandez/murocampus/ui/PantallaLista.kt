@@ -44,8 +44,13 @@ fun PantallaLista(
     val estado by vm.resultados.collectAsStateWithLifecycle()
     val busqueda by vm.busqueda.collectAsStateWithLifecycle()
     val filtro by vm.usuarioFiltro.collectAsStateWithLifecycle()
+    val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize()) {
+        if (eliminacion is UiState.Exito) Text(
+            "Publicación eliminada", color = Color(0xFF176B36),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
         OutlinedTextField(
             value = busqueda,
             onValueChange = vm::buscar,

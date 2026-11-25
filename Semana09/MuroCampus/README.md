@@ -369,3 +369,44 @@ instrumentadas, sin fallos, con 24 advertencias y cero errores de lint.
 El análisis y las decisiones se registran en [PROMPTS.md](PROMPTS.md).
 
 ---
+
+## B. Eliminar publicaciones con DELETE
+
+`PostApi.eliminar` usa `@DELETE("posts/{id}")`, `@Path` y `Response<Unit>`.
+Repository verifica `isSuccessful`, convierte HTTP no exitoso en `HttpException`
+en datos y devuelve `Result<Unit>`; la cancelación se relanza. El ViewModel solo
+depende del Repository y mantiene estado/Job independientes, evita duplicados y
+descarta respuestas obsoletas al cerrar o cambiar de detalle.
+
+El botón rojo abre un diálogo Cancelar/Eliminar. Cancelar no envía nada; confirmar
+conserva los datos mientras espera. Tras éxito regresa a la lista con confirmación.
+Los IDs eliminados se excluyen de cargas posteriores durante la sesión, conservando
+consulta y filtro. Un fallo mantiene el detalle y permite volver a confirmar.
+
+**Comprobación real:** MuroCampus envió `DELETE /posts/1`, recibió **HTTP 200** y
+`{}`. Se comprobó cancelación sin DELETE y exclusión al buscar/cambiar de filtro y
+volver a Todos. Otro post (id 2) falló sin conexión; el detalle se conservó y un
+reintento voluntario conectado obtuvo HTTP 200. Ajustes del emulador restaurados.
+
+**JSONPlaceholder simula la escritura:** hubo HTTP real, no eliminación permanente.
+La exclusión es memoria del ViewModel; reiniciar completamente puede recuperar los
+datos originales. No hay Room, DataStore ni persistencia remota implementada.
+
+Pruebas del avance: **200 unitarias y 50 instrumentadas** (21 y 4 nuevas frente a
+búsqueda), cero fallos/errores/omitidas; assemble, lint y repetición unitaria offline
+correctos. Lint: 24 advertencias, cero errores. Se adaptaron todos los fakes y el
+contrato de seis operaciones sin debilitar las comprobaciones anteriores.
+
+![Confirmación real](evidencias/con-ia/eliminar-confirmacion.png)
+![Eliminación real exitosa](evidencias/con-ia/eliminar-exito.png)
+
+Segundo avance: `feat(eliminar): permite eliminar publicaciones con DELETE`.
+
+### Cambio documental externo respetado
+
+Durante el desarrollo se detectó `544e1ca5ce1cfdca742510b34dffba2d590c4ea8`
+(`Update README.md`) en `main` remota, hijo directo del `main` local original
+`8a67a4546970c047a5e6ea792a59f290e5d73481`. Solo modifica este README, retirando
+sus secciones finales de Fase 1; fuente, pruebas y dependencias permanecen iguales.
+El usuario autorizó continuar sin integrarlo ni sincronizar ambas referencias.
+No se modificó ni publicó `main`; `con-ia` conserva la documentación base original.

@@ -17,6 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.fernandez.murocampus.viewmodel.UiState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,6 +71,13 @@ internal fun PantallaInicio(vm: PostsViewModel) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var creando by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
+    val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
+    LaunchedEffect(eliminacion) {
+        if (eliminacion is UiState.Exito && idSeleccionado != null) {
+            vm.cerrarDetalle()
+            idSeleccionado = null
+        }
+    }
     BackHandler(enabled = idSeleccionado != null || creando) {
         if (creando) {
             vm.cerrarCreacion()

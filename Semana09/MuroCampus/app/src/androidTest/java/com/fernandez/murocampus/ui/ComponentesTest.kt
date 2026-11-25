@@ -50,6 +50,7 @@ class ComponentesTest {
     fun listaMuestraCargandoMientrasElRepositoryEstaPendiente() {
         val pendiente = CompletableDeferred<Result<List<Post>>>()
         val repo = object : PostRepository {
+            override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
             override suspend fun listar(): Result<List<Post>> = pendiente.await()
             override suspend fun detalle(id: Int): Result<Post> = error("No se utiliza en esta prueba")
             override suspend fun comentarios(id: Int): Result<List<Comentario>> = error("No se utiliza en esta prueba")

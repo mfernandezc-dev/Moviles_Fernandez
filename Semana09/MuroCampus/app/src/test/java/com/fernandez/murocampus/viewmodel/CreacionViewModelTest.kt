@@ -316,6 +316,7 @@ class CreacionViewModelTest {
     private fun http(codigo: Int) = HttpException(Response.error<Post>(codigo, "{}".toResponseBody("application/json".toMediaType())))
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         val enviados = mutableListOf<NuevoPost>()
         var gets = 0
         var respuesta: suspend (NuevoPost) -> Result<Post> = { Result.success(recibido) }
