@@ -1,0 +1,56 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# IDE and Kotlin caches
+.idea/
+.kotlin/
+
+# Build outputs in any module
+build/
+*.apk
+*.aab
+
+# Temporary files and logs
+*.tmp
+*.temp
+*.log
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+
+# Private keys and keystores
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.der
+*.pk8
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# Local credentials
+.env
+.env.*
+credentials.properties
+keystore.properties
+signing.properties
+secrets.properties
