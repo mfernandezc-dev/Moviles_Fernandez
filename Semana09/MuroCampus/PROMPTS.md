@@ -155,3 +155,64 @@ obsoletas y los estados de cada escritura son independientes.
 No se inventaron prompts adicionales ni decisiones del estudiante. El estudiante
 debe revisar personalmente las tres mejoras, pruebas, limitaciones y explicación
 técnica antes de la entrega; este registro no certifica que ya lo haya hecho.
+
+## Corrección posterior — petición real del usuario
+
+Después de publicar los tres commits, el usuario informó dos problemas reales y
+autorizó expresamente un commit adicional. Fragmentos de su petición:
+
+> Actualmente, al crear una publicación con título "Tecsup" y contenido "moviles", JSONPlaceholder responde con id 101, pero la publicación no aparece en la lista ni en el buscador.
+> Evitar identificadores y claves duplicadas en LazyColumn, considerando que JSONPlaceholder puede devolver id 101 en múltiples solicitudes.
+> No realizar solicitudes GET, PATCH o DELETE sobre recursos simulados que no existen realmente en el servidor.
+> Ambos mecanismos deben compartir la misma lógica de navegación.
+> AUTORIZO expresamente realizar un commit adicional de corrección si los tres commits originales de la Fase 2 ya fueron publicados.
+
+| Prompt que escribí | Qué respondió la IA | Qué cambié o descarté | Por qué |
+| --- | --- | --- | --- |
+| Corrección 1: incorporar el Post recibido, permitir búsqueda y operaciones locales, sin colisiones de id 101. | OpenCode agregó una colección de sesión en PostsViewModel y una lista derivada que la antepone a los datos descargados, aplicando filtro y búsqueda. | Decisión del agente: conservar el Post original e identificar su copia de pantalla con una clave negativa independiente; no reutilizar id 101 como clave única. | Dos respuestas reales pueden contener el mismo ID; deben ser publicaciones locales distintas y no recursos remotos consultables. |
+| Corrección 1: diferenciar locales/remotos y no enviar GET/PATCH/DELETE sobre los simulados. | OpenCode agregó etiquetas de origen y resolvió detalle, edición y eliminación de locales exclusivamente en memoria. | El agente mantuvo intactos PostApi y Repository para los originales; no agregó Room ni dependencias. | Mantiene MVVM y operaciones remotas reales, sin inventar persistencia del proveedor. |
+| Corrección 2: flecha blanca con navigationIcon y BackHandler compartido. | OpenCode creó un vector local y una función de regreso común para flecha, BackHandler y Volver al detalle. | La prueba real mostró que el ancla del primer post remoto podía ocultar la nueva tarjeta; el agente ajustó el regreso tras crear desde el inicio, manteniendo el desplazamiento si se creó desde otra posición. | Es necesario mostrar el nuevo inicio sin perder la posición del usuario que ya estaba desplazado ni ejecutar otro GET. |
+| Pruebas obligatorias desde el emulador, conservar pruebas y publicar. | OpenCode agregó 20 unitarias y 8 instrumentadas y probó POST, ciclo local, IDs repetidos, filtros y PATCH/DELETE originales reales. | El agente corrigió selectores Compose ambiguos (consulta y tarjeta tenían el mismo texto), expectativas de scroll y supuestos del script externo sobre el teclado físico/inicio de Activity. No cambió pruebas previas ni fabricó capturas. | Las comprobaciones deben reflejar la UI real, incluidos LazyListState y la configuración del AVD disponible. |
+
+### Cambios y justificación efectiva
+
+- `PostsViewModel.kt`: colección observable de locales, claves únicas, combinación
+  con consulta/filtro, uso del Post devuelto y rutas locales sin Repository.
+- `MainActivity.kt`: regreso único, flecha en secundarias y conservación de posición.
+- `Componentes.kt`, `PantallaLista.kt`, `PantallaDetalle.kt`: origen local visible,
+  claves estables y etiqueta de lista para comprobar desplazamiento.
+- `res/drawable/ic_arrow_back.xml`: flecha blanca sin dependencias adicionales.
+- `PublicacionesLocalesTest.kt`, `CorreccionesTest.kt`: pruebas nuevas; todos los
+  archivos de pruebas anteriores permanecen intactos.
+- README y cuatro capturas reales nuevas. Ninguna modificación a main u otras semanas.
+
+### Resultados y evidencia
+
+**248 unitarias y 65 instrumentadas**, cero fallos, errores u omitidas en la
+ejecución final. Las 285 anteriores se verificaron por nombres de casos en los XML;
+se agregaron 28. Assemble y lint correctos; 24 advertencias y cero errores de lint.
+AVD disponible: Catalogo_H11_C API 37, distinto del utilizado en el cierre anterior.
+
+POST real `Tecsup`/`moviles` → 201/id 101. Flecha al volver, lista y búsqueda
+verificadas; detalle sin GET, edición a `Tecsup actualizado` y eliminación sin
+PATCH/DELETE, incluso offline. Dos POST más devolvieron id 101 y conservaron dos
+tarjetas distintas; filtros y recargas respetaron Usuario 1. En la regresión remota,
+PATCH /posts/2 → 200 con solo title y los demás campos conservados, cinco comentarios;
+DELETE /posts/1 → 200. Gboard autocorrigió el título de esa prueba remota a
+`Publicacion remote corregida`; ese fue el JSON realmente registrado, no se afirma
+que se enviara otro texto. No hubo solicitudes a id 101 o claves negativas ni
+cierres inesperados. Se restauraron conectividad y rotación.
+
+Capturas: [lista](evidencias/con-ia/creada-lista.png),
+[búsqueda](evidencias/con-ia/creada-busqueda.png),
+[flecha](evidencias/con-ia/retroceso.png),
+[edición local](evidencias/con-ia/edicion-local.png).
+
+Para sustentación: el ID del servidor y la identidad de una copia de sesión no
+representan lo mismo. `lista` conserva la descarga; la UI deriva una combinación
+con las copias locales. El regreso solo cambia navegación, no descarga datos.
+Esta colección es temporal y no sobrevive a la muerte del proceso.
+
+El commit adicional fue autorizado por el usuario; no se reescriben los tres
+anteriores. Las decisiones descritas son del agente OpenCode, no modificaciones
+personales inventadas del estudiante. Su revisión y comprensión siguen siendo necesarias.

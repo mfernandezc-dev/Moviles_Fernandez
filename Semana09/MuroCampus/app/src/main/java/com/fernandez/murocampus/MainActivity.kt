@@ -16,6 +16,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,8 +75,10 @@ internal fun PantallaInicio(vm: PostsViewModel) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var creando by rememberSaveable { mutableStateOf(false) }
     var editando by rememberSaveable { mutableStateOf(false) }
+    var creandoDesdeInicio by rememberSaveable { mutableStateOf(true) }
     val listState = rememberLazyListState()
     val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
+    val creacion by vm.creacion.collectAsStateWithLifecycle()
     LaunchedEffect(eliminacion) {
         if (eliminacion is UiState.Exito && idSeleccionado != null) {
             vm.cerrarDetalle()
@@ -81,11 +86,14 @@ internal fun PantallaInicio(vm: PostsViewModel) {
             idSeleccionado = null
         }
     }
-    BackHandler(enabled = idSeleccionado != null || creando) {
+    val volver: () -> Unit = {
         if (editando) {
             vm.cerrarEdicion()
             editando = false
         } else if (creando) {
+            // Mantener el inicio visible evita que el ancla anterior oculte el nuevo primer post.
+            // Si el usuario estaba desplazado, se conserva su posición y su ancla.
+            if (creandoDesdeInicio && creacion is UiState.Exito) listState.requestScrollToItem(0)
             vm.cerrarCreacion()
             creando = false
         } else {
@@ -93,6 +101,7 @@ internal fun PantallaInicio(vm: PostsViewModel) {
             idSeleccionado = null
         }
     }
+    BackHandler(enabled = idSeleccionado != null || creando, onBack = volver)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -101,6 +110,7 @@ internal fun PantallaInicio(vm: PostsViewModel) {
             if (idSeleccionado == null && !creando) {
                 FloatingActionButton(
                     onClick = {
+                        creandoDesdeInicio = listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0
                         vm.prepararCreacion()
                         creando = true
                     },
@@ -114,6 +124,11 @@ internal fun PantallaInicio(vm: PostsViewModel) {
         },
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    if (idSeleccionado != null || creando) IconButton(onClick = volver) {
+                        Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Volver", tint = Color.White)
+                    }
+                },
                 title = {
                     Text(
                         text = stringResource(R.string.app_name),
@@ -130,7 +145,7 @@ internal fun PantallaInicio(vm: PostsViewModel) {
         val contenido = Modifier.fillMaxSize().padding(innerPadding)
         val id = idSeleccionado
         if (editando && id != null) {
-            PantallaEditar(vm, id, contenido, onVolver = { vm.cerrarEdicion(); editando = false })
+            PantallaEditar(vm, id, contenido, onVolver = volver)
         } else if (creando) {
             PantallaCrear(vm = vm, modifier = contenido)
         } else if (id == null) {

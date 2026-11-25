@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.fernandez.murocampus.model.Post
 
 @Composable
-fun TarjetaPost(post: Post, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
+fun TarjetaPost(post: Post, modifier: Modifier = Modifier, esLocal: Boolean = false, onClick: () -> Unit = {}) {
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -47,6 +47,11 @@ fun TarjetaPost(post: Post, modifier: Modifier = Modifier, onClick: () -> Unit =
                     style = MaterialTheme.typography.labelMedium
                 )
             }
+            if (esLocal) Text(
+                "Local · solo durante esta sesión",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium
+            )
             Text(
                 text = post.title,
                 color = Color(0xFF20252B),

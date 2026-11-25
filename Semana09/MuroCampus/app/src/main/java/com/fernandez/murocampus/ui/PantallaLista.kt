@@ -114,12 +114,12 @@ fun PantallaLista(
                     } else {
                         LazyColumn(
                             state = listState,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().testTag("publicaciones"),
                             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(items = actual.datos, key = { post -> post.id }) { post ->
-                                TarjetaPost(post = post, onClick = { onPostClick(post.id) })
+                                TarjetaPost(post = post, esLocal = vm.esLocal(post.id), onClick = { onPostClick(post.id) })
                             }
                         }
                     }

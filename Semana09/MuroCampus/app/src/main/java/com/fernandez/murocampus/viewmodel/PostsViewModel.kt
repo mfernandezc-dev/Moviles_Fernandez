@@ -33,7 +33,19 @@ class PostsViewModel(
     val lista = _lista.asStateFlow()
     private val _busqueda = MutableStateFlow("")
     val busqueda = _busqueda.asStateFlow()
-    val resultados = combine(lista, busqueda) { estado, texto ->
+    private val _usuarioFiltro = MutableStateFlow<Int?>(null)
+    val usuarioFiltro = _usuarioFiltro.asStateFlow()
+    // La clave negativa identifica la copia de sesión; el Post conserva el id recibido del POST.
+    private val _locales = MutableStateFlow<Map<Int, Post>>(emptyMap())
+    private var siguienteIdLocal = -1
+    private val publicaciones = combine(lista, _locales, usuarioFiltro) { estado, locales, filtro ->
+        if (estado is UiState.Exito && locales.isNotEmpty()) {
+            val nuevas = locales.filterValues { filtro == null || it.userId == filtro }
+                .map { (clave, post) -> post.copy(id = clave) }
+            UiState.Exito(nuevas + estado.datos)
+        } else estado
+    }
+    val resultados = combine(publicaciones, busqueda) { estado, texto ->
         val consulta = texto.trim()
         if (estado is UiState.Exito && consulta.isNotEmpty()) {
             UiState.Exito(estado.datos.filter { it.title.contains(consulta, ignoreCase = true) })
@@ -42,8 +54,6 @@ class PostsViewModel(
     private var carga: Job? = null
     private var versionLista = 0L
 
-    private val _usuarioFiltro = MutableStateFlow<Int?>(null)
-    val usuarioFiltro = _usuarioFiltro.asStateFlow()
 
     private val _detalle = MutableStateFlow<UiState<DetalleUi>>(UiState.Cargando)
     val detalle = _detalle.asStateFlow()
@@ -73,6 +83,8 @@ class PostsViewModel(
     fun buscar(texto: String) {
         _busqueda.value = texto
     }
+
+    fun esLocal(id: Int): Boolean = id in _locales.value
 
     fun cargar() {
         if (carga?.isActive == true) return
@@ -108,6 +120,12 @@ class PostsViewModel(
         _eliminacion.value = null
         if (id in eliminados) {
             _detalle.value = UiState.Error("Esta publicación fue eliminada durante la sesión.")
+            return
+        }
+        if (id < 0) {
+            val local = _locales.value[id]
+            _detalle.value = if (local != null) UiState.Exito(DetalleUi(local.copy(id = id), emptyList()))
+                else UiState.Error("Esta publicación local ya no está disponible.")
             return
         }
         val version = versionDetalle
@@ -169,11 +187,16 @@ class PostsViewModel(
         _edicion.value = UiState.Cargando
         cargaEdicion = viewModelScope.launch {
             try {
-                val resultado = repo.editar(id, EditarPost(limpio))
+                val resultado = if (esLocal(id)) {
+                    Result.success(_locales.value.getValue(id).copy(id = id, title = limpio))
+                } else repo.editar(id, EditarPost(limpio))
                 ensureActive()
                 if (version != versionEdicion || id in eliminados) return@launch
                 resultado.onSuccess { post ->
-                    actualizados[id] = post
+                    if (esLocal(id)) {
+                        val recibido = _locales.value.getValue(id)
+                        _locales.value = _locales.value + (id to recibido.copy(title = post.title))
+                    } else actualizados[id] = post
                     val listaActual = _lista.value
                     if (listaActual is UiState.Exito) _lista.value = UiState.Exito(aplicarSesion(listaActual.datos))
                     val detalleActual = _detalle.value
@@ -201,11 +224,12 @@ class PostsViewModel(
         _eliminacion.value = UiState.Cargando
         cargaEliminacion = viewModelScope.launch {
             try {
-                val resultado = repo.eliminar(id)
+                val resultado = if (esLocal(id)) Result.success(Unit) else repo.eliminar(id)
                 ensureActive()
                 if (version != versionEliminacion) return@launch
                 resultado.onSuccess {
                     eliminados += id
+                    _locales.value = _locales.value - id
                     actualizados.remove(id)
                     cerrarEdicion()
                     val listaActual = _lista.value
@@ -241,7 +265,11 @@ class PostsViewModel(
                 ensureActive()
                 if (version != versionCreacion) return@launch
                 resultado
-                    .onSuccess { post -> _creacion.value = UiState.Exito(post) }
+                    .onSuccess { post ->
+                        val clave = siguienteIdLocal--
+                        _locales.value = mapOf(clave to post) + _locales.value
+                        _creacion.value = UiState.Exito(post)
+                    }
                     .onFailure { error ->
                         if (error is CancellationException) throw error
                         _creacion.value = UiState.Error(mensajeDe(error))

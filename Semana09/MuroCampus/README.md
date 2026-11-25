@@ -513,7 +513,7 @@ ese transporte usa Retrofit y serialización reales sin internet. No es evidenci
 de persistencia del proveedor. Las pruebas reales del emulador están separadas de
 esas pruebas controladas. XML, Logcat y JSON completos permanecen fuera del repositorio.
 
-## Historial final y comparación de ramas
+## Historial de los tres avances originales y comparación de ramas
 
 | Avance | Mensaje exacto | Referencia |
 | --- | --- | --- |
@@ -548,3 +548,81 @@ Su resultado, hashes finales e integridad se informan al usuario al terminar.
 - [Fase 2 en GitHub](https://github.com/mfernandezc-dev/Moviles_Fernandez/tree/con-ia/Semana09/MuroCampus)
 - [Fase 1 en main remota](https://github.com/mfernandezc-dev/Moviles_Fernandez/tree/main/Semana09/MuroCampus)
 - [Registro transparente de prompts y revisión pendiente del estudiante](PROMPTS.md)
+
+## Corrección posterior autorizada — publicaciones de sesión y navegación
+
+Esta sección describe el **estado vigente después de los tres avances originales**.
+Se autorizó expresamente un commit adicional, sin reescribir los anteriores:
+`fix(ui): corrige navegacion y visualizacion de publicaciones creadas`.
+El historial de Fase 2 conserva sus tres commits originales; esta corrección es
+un cuarto commit posterior, no una modificación de aquellos ni de `main`.
+
+### Publicaciones creadas visibles y utilizables
+
+Antes, el POST mostraba el éxito, pero su respuesta no se incorporaba a la lista.
+Ahora PostsViewModel conserva el **Post recibido** en una colección local observable.
+La vista derivada combina lista descargada, publicaciones locales, filtro y búsqueda:
+las nuevas aparecen primero, respetando el `userId` recibido. El contrato `lista`
+sigue representando los datos descargados; no se destruye ni se fuerza un nuevo GET
+al publicar o regresar. El autor del formulario sigue siendo Usuario 1, aunque el
+filtro activo sea otro; una publicación de ese autor no aparece bajo Usuario 2.
+
+JSONPlaceholder puede devolver **id 101 en cada POST**. Por ello:
+
+- La respuesta original (con id 101) se conserva y se muestra como éxito de creación.
+- Cada copia de sesión tiene una **clave local negativa única** (`-1`, `-2`, …),
+  utilizada como ID de navegación y clave estable de LazyColumn. No es un ID remoto.
+- Las tarjetas y el detalle muestran una etiqueta de publicación local.
+- Abrir una local muestra sus datos y cero comentarios sin consultar al servidor.
+- Editar y eliminar locales solo modifican esa colección: **no envían GET, PATCH
+  ni DELETE**, ni sobre id 101 ni sobre las claves negativas.
+- Las publicaciones originales siguen utilizando GET, PATCH y DELETE reales por
+  medio del Repository. La interfaz PostApi y las dependencias no cambiaron.
+- Cambiar de filtro o recargar no pierde ni duplica las copias de sesión. Editar
+  una copia no afecta a otra que recibió el mismo id 101 del proveedor.
+
+**No hay persistencia permanente:** la colección sobrevive a navegación y rotación
+con ViewModel retenido, pero se pierde al terminar el proceso. No se agregó Room,
+DataStore ni almacenamiento remoto. JSONPlaceholder continúa simulando escrituras.
+
+### Regreso compartido
+
+`TopAppBar.navigationIcon` muestra una flecha blanca accesible como **Volver** solo
+en pantallas secundarias. La flecha, BackHandler y Volver al detalle usan la misma
+función: crear/detalle → lista; editar → detalle. No hacen nuevas solicitudes HTTP.
+Se conservan consulta, filtro, colección y desplazamiento.
+
+Al volver de una creación exitosa iniciada desde la parte superior de la lista,
+se mantiene visible el índice inicial para mostrar la tarjeta recién insertada:
+así el ancla del antiguo primer elemento no la oculta. Si se abrió el formulario
+desde una posición desplazada, se conserva ese elemento visible al regresar.
+
+### Verificaciones de la corrección
+
+- **248 unitarias + 65 instrumentadas = 313 pruebas únicas**, todas aprobadas,
+  cero fallos, errores u omitidas. Se conservan las 285 pruebas anteriores sin
+  modificar sus archivos; se agregan 20 unitarias y 8 Compose.
+- Assemble, testDebugUnitTest, lintDebug y connectedDebugAndroidTest correctos.
+  Lint mantiene **24 advertencias y cero errores**.
+- Emulador disponible: **Catalogo_H11_C, API 37**, sin sustituir ni borrar otras apps.
+- Prueba real: POST `Tecsup`/`moviles` → **HTTP 201**, id 101; flecha al volver,
+  tarjeta visible, búsqueda, detalle local, edición a `Tecsup actualizado`, búsqueda
+  actualizada y eliminación local. Edición y eliminación locales también se
+  comprobaron sin conexión; Logcat no registra HTTP adicional en ese recorrido.
+- Dos nuevos POST (`Tecsup uno`, `Tecsup dos`) → **201/id 101 ambos**; dos tarjetas
+  distintas, sin claves duplicadas ni cierres. Usuario 2 las oculta; Usuario 1 y
+  Todos vuelven a mostrarlas tras nuevas cargas.
+- Regresión remota real: `PATCH /posts/2` → **200**, JSON con solo `title`, cuerpo,
+  autor e id conservados; cinco comentarios y búsqueda actualizados. El título
+  efectivamente enviado fue `Publicacion remote corregida` (autocorrección de
+  Gboard durante la entrada). `DELETE /posts/1` → **200**, `{}`.
+- Sin solicitudes a `/posts/101` ni a IDs negativos; proceso estable, sin cierres
+  inesperados. Conectividad y rotación del emulador restauradas.
+
+Los registros técnicos completos y los XML están fuera del repositorio. Estas son
+capturas reales seleccionadas, adicionales a las diez anteriores:
+
+![Publicación creada al inicio](evidencias/con-ia/creada-lista.png)
+![Búsqueda de Tecsup](evidencias/con-ia/creada-busqueda.png)
+![Flecha y éxito del POST](evidencias/con-ia/retroceso.png)
+![Edición local durante la prueba offline](evidencias/con-ia/edicion-local.png)

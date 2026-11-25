@@ -71,6 +71,10 @@ fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier 
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            if (vm.esLocal(datos.post.id)) Text(
+                                "Publicación local · solo durante esta sesión",
+                                color = MaterialTheme.colorScheme.primary
+                            )
                             Text(
                                 datos.post.title,
                                 color = Color(0xFF20252B),
