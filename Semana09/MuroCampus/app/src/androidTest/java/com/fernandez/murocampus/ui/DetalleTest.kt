@@ -3,6 +3,7 @@ package com.fernandez.murocampus.ui
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -109,7 +110,7 @@ class DetalleTest {
         compose.onNodeWithText(post.title).performClick()
         compose.onNodeWithText("Comentarios (2)").performScrollTo().assertIsDisplayed()
         pressBack()
-        compose.onNodeWithText("Usuario 2").assertIsDisplayed()
+        compose.onNode(hasText("Usuario 2") and hasText(post.title)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(1, repo.llamadasLista) }
     }
 
@@ -120,7 +121,7 @@ class DetalleTest {
         compose.onNodeWithText(post.title).performClick()
         compose.onNodeWithContentDescription("Cargando detalle").assertIsDisplayed()
         pressBack()
-        compose.onNodeWithText("Usuario 2").assertIsDisplayed()
+        compose.onNode(hasText("Usuario 2") and hasText(post.title)).assertIsDisplayed()
         compose.runOnIdle { assertEquals(1, repo.llamadasLista) }
     }
 

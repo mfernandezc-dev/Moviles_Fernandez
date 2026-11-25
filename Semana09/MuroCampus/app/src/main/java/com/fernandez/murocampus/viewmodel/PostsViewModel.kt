@@ -27,6 +27,10 @@ class PostsViewModel(
     private val _lista = MutableStateFlow<UiState<List<Post>>>(UiState.Cargando)
     val lista = _lista.asStateFlow()
     private var carga: Job? = null
+    private var versionLista = 0L
+
+    private val _usuarioFiltro = MutableStateFlow<Int?>(null)
+    val usuarioFiltro = _usuarioFiltro.asStateFlow()
 
     private val _detalle = MutableStateFlow<UiState<DetalleUi>>(UiState.Cargando)
     val detalle = _detalle.asStateFlow()
@@ -40,9 +44,14 @@ class PostsViewModel(
     fun cargar() {
         if (carga?.isActive == true) return
 
+        val filtroActual = _usuarioFiltro.value
+        val version = ++versionLista
+        _lista.value = UiState.Cargando
         carga = viewModelScope.launch {
-            _lista.value = UiState.Cargando
-            repo.listar()
+            val resultado = if (filtroActual == null) repo.listar() else repo.porUsuario(filtroActual)
+            ensureActive()
+            if (version != versionLista) return@launch
+            resultado
                 .onSuccess { posts ->
                     _lista.value = UiState.Exito(posts)
                 }
@@ -51,6 +60,14 @@ class PostsViewModel(
                     _lista.value = UiState.Error(mensajeDe(error))
                 }
         }
+    }
+
+    fun filtrar(userId: Int?) {
+        if (_usuarioFiltro.value == userId) return
+        carga?.cancel()
+        carga = null
+        _usuarioFiltro.value = userId
+        cargar()
     }
 
     fun abrir(id: Int) {
