@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.fernandez.murocampus.data.PostRepository
 import com.fernandez.murocampus.data.mensajeDe
 import com.fernandez.murocampus.model.Comentario
+import com.fernandez.murocampus.model.NuevoPost
 import com.fernandez.murocampus.model.Post
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -36,6 +37,11 @@ class PostsViewModel(
     val detalle = _detalle.asStateFlow()
     private var cargaDetalle: Job? = null
     private var versionDetalle = 0L
+
+    private val _creacion = MutableStateFlow<UiState<Post>?>(null)
+    val creacion = _creacion.asStateFlow()
+    private var cargaCreacion: Job? = null
+    private var versionCreacion = 0L
 
     init {
         cargar()
@@ -96,5 +102,42 @@ class PostsViewModel(
         versionDetalle++
         cargaDetalle?.cancel()
         cargaDetalle = null
+    }
+
+    fun prepararCreacion() {
+        cerrarCreacion()
+        _creacion.value = null
+    }
+
+    fun publicar(titulo: String, texto: String) {
+        if (titulo.isBlank() || texto.isBlank() || cargaCreacion?.isActive == true) return
+
+        val nuevo = NuevoPost(userId = 1, title = titulo.trim(), body = texto.trim())
+        val version = ++versionCreacion
+        _creacion.value = UiState.Cargando
+        cargaCreacion = viewModelScope.launch {
+            try {
+                val resultado = repo.crear(nuevo)
+                ensureActive()
+                if (version != versionCreacion) return@launch
+                resultado
+                    .onSuccess { post -> _creacion.value = UiState.Exito(post) }
+                    .onFailure { error ->
+                        if (error is CancellationException) throw error
+                        _creacion.value = UiState.Error(mensajeDe(error))
+                    }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ensureActive()
+                if (version == versionCreacion) _creacion.value = UiState.Error(mensajeDe(e))
+            }
+        }
+    }
+
+    fun cerrarCreacion() {
+        versionCreacion++
+        cargaCreacion?.cancel()
+        cargaCreacion = null
     }
 }
