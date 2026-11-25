@@ -304,27 +304,4 @@ El POST crearía un recurso persistente y las consultas posteriores podrían rec
 4. Validar los campos y representar los errores permite recuperarse sin perder el formulario ni enviar datos inválidos.
 5. Los commits separados y las pruebas de regresión ayudan a integrar cada avance sin perder las funcionalidades anteriores.
 
-## 15. Historial de desarrollo
 
-Los hashes se muestran abreviados. El último avance corresponde a este commit de documentación; no se inserta su propio hash en el archivo.
-
-| N.º | Commit | Hash abreviado |
-|---:|---|---|
-| 1 | `chore: importa proyecto base MuroCampus` | `e9a3fbf` |
-| 2 | `chore(red): agrega permiso de internet y dependencias de Retrofit` | `1d98eb9` |
-| 3 | `feat(model): agrega Post, Comentario y NuevoPost` | `32902d1` |
-| 4 | `feat(api): define la interface PostApi con GET y POST` | `a80ea86` |
-| 5 | `feat(red): crea RetrofitClient con OkHttp y conversor JSON` | `e491561` |
-| 6 | `feat(data): agrega PostRepository que devuelve Result` | `90c6a22` |
-| 7 | `feat(ui): lista de publicaciones con estados Cargando, Exito y Error` | `74e93ec` |
-| 8 | `feat(detalle): muestra publicacion y comentarios con Path` | `86fb00f` |
-| 9 | `feat(filtro): filtra publicaciones por usuario con Query` | `68aac56` |
-| 10 | `feat(crear): publica una nueva publicacion con POST y Body` | `f1ac3a9` |
-| 11 | `docs: agrega README con estructura y capturas` | — |
-
-## 16. Alcance de las ramas
-
-- **main:** funcionalidades base del laboratorio: lista, estados, detalle, comentarios, filtro y creación, junto con pruebas y documentación.
-- **con-ia:** rama existente reservada para una segunda fase de mejoras adicionales. No se implementaron ni publicaron esas mejoras durante esta primera fase y la rama se mantuvo intacta.
-
-Se utilizó **OpenCode como apoyo de desarrollo** para la implementación, las pruebas, la documentación y las operaciones Git. Los resultados indicados se contrastaron con reportes y evidencias reales; no se presenta esta fase como un trabajo realizado sin asistencia de IA.
