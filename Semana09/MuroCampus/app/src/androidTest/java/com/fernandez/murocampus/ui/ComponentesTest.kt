@@ -87,11 +87,11 @@ class ComponentesTest {
         compose.onNodeWithText(post.title).assertIsDisplayed()
         compose.onNodeWithText(post.body).assertIsDisplayed()
         val cuerpo = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText(post.body).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(cuerpo) }
+        compose.onNodeWithText(post.body, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(cuerpo) }
         assertEquals(2, cuerpo.single().lineCount)
         assertTrue(cuerpo.single().isLineEllipsized(1))
         val titulo = mutableListOf<TextLayoutResult>()
-        compose.onNodeWithText(post.title).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titulo) }
+        compose.onNodeWithText(post.title, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(titulo) }
         assertEquals(FontWeight.Bold, titulo.single().layoutInput.style.fontWeight)
     }
 

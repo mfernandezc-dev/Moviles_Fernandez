@@ -28,8 +28,9 @@ import androidx.compose.ui.unit.dp
 import com.fernandez.murocampus.model.Post
 
 @Composable
-fun TarjetaPost(post: Post, modifier: Modifier = Modifier) {
+fun TarjetaPost(post: Post, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Card(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFEDF2F6))
@@ -64,7 +65,11 @@ fun TarjetaPost(post: Post, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun Cargando(modifier: Modifier = Modifier) {
+fun Cargando(
+    modifier: Modifier = Modifier,
+    mensaje: String = "Cargando publicaciones…",
+    descripcion: String = "Cargando publicaciones"
+) {
     Box(modifier = modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
         Surface(shape = RoundedCornerShape(16.dp), color = Color.White) {
             Column(
@@ -73,10 +78,10 @@ fun Cargando(modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.semantics { contentDescription = "Cargando publicaciones" },
+                    modifier = Modifier.semantics { contentDescription = descripcion },
                     color = MaterialTheme.colorScheme.primary
                 )
-                Text("Cargando publicaciones…", color = MaterialTheme.colorScheme.onSurface)
+                Text(mensaje, color = MaterialTheme.colorScheme.onSurface)
             }
         }
     }
