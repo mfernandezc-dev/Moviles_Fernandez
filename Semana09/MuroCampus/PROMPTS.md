@@ -93,3 +93,65 @@ Para sustentación: éxito HTTP y persistencia son garantías diferentes. JSONPl
 simula DELETE; el conjunto de IDs en el ViewModel evita reapariciones solo durante
 esa sesión. Cancelar un diálogo no inicia una corrutina ni llama al Repository.
 Todas estas decisiones corresponden al agente y requieren revisión del estudiante.
+
+## MEJORA C — Edición
+
+### Fragmentos reales del prompt maestro (secciones 30–45)
+
+> Este modelo representa exclusivamente el campo que se desea modificar.
+> Utilizar el Post realmente devuelto por el servidor.
+> Actualizar el detalle actual.
+> Conservar los comentarios.
+> Las eliminaciones locales tendrán prioridad sobre las actualizaciones: una publicación eliminada no debe reaparecer por una actualización almacenada.
+> No ejecutar PATCH automáticamente al escribir.
+> No ejecutar PATCH automáticamente al rotar.
+
+| Prompt que escribí | Qué respondió la IA | Qué cambié o descarté | Por qué |
+| --- | --- | --- | --- |
+| Secciones 31–34: EditarPost, PATCH, Result y actualización de sesión. | OpenCode agregó modelo, contrato de siete operaciones, delegación y estado/Job/versión de edición. | El agente guarda el Post recibido por ID; no reconstruye una respuesta a partir del formulario. La eliminación retira el override y cancela edición pendiente. | Respeta la respuesta real, conserva comentarios y evita reapariciones por carreras de solicitudes. |
+| Secciones 35–38: formulario, navegación, validación y pruebas. | OpenCode creó PantallaEditar, borrador saveable y acciones diferenciadas; agregó 28 unitarias y 7 Compose. | El agente corrigió dos expectativas Compose nuevas: texto de referencia y cuerpo compartían el mismo literal; un Back con teclado visible puede cerrar primero el teclado. Se verificó retorno explícito al detalle. | No debilitar las pruebas anteriores ni cambiar producción para ocultar errores de selección/teclado en el test. |
+| Secciones 39–40: título exacto acentuado, Logcat y capturas reales. | OpenCode ejecutó PATCH /posts/2 desde MuroCampus, obtuvo HTTP 200 y comparó respuesta, título, id, autor y cuerpo con GET original. | El agente utilizó Gboard real para `í`, tras ajustar el teclado flotante y corregir intentos de selección del acento. Ninguno de esos borradores incorrectos se guardó por PATCH. | ADB input text no permite esa entrada Unicode en este AVD; no se sustituyó el título solicitado ni se manipuló estado de producción. |
+| Secciones 43–49 y autorización adicional: cierre, checkout e integridad. | OpenCode preparó comprobaciones de pruebas, arquitectura, archivos y comparación de APK recompiladas por rama después del tercer push. | Sin cuarto commit; registros de cierre y capturas comparativas fuera de Git. Mantener main local/remota diferentes está expresamente autorizado. | Evita reescritura de trabajo externo y respeta exactamente tres avances. El resultado posterior se entrega en el informe final, no se anticipa aquí. |
+
+### Archivos y decisiones
+
+`Modelos.kt`, `PostApi.kt`, `PostRepository.kt`, `PostsViewModel.kt`,
+`PantallaEditar.kt`, `PantallaDetalle.kt`, `MainActivity.kt`, pruebas de contrato y
+todos los fakes ampliados explícitamente. Nuevas suites `EdicionRepositoryTest`,
+`EdicionViewModelTest`, `EdicionTest`; README y dos capturas reales actualizados.
+
+El formulario no llama a la red al escribir. Guardar valida en UI y ViewModel;
+el fallo mantiene el borrador, el éxito aplica el resultado, y volver no recarga la
+lista. `rememberSaveable` conserva el formulario en recreación y el ViewModel
+mantiene la sesión. No se agregó almacenamiento permanente ni nuevas dependencias.
+
+### Resultados reales y controlados
+
+- **228 unitarias + 57 instrumentadas = 285 únicas**, 65/17 nuevas frente a base;
+  cero fallos, errores u omitidas. Assemble/lint/offline correctos, 24 advertencias
+  y cero errores de lint. Se mantienen las comprobaciones de las 225 pruebas de
+  búsqueda y las de DELETE, además de las 203 base.
+- Pruebas JVM de HTTP local: Retrofit real envía PATCH con solo `title`, interpreta
+  Post y HTTP 500; DELETE verifica método/Response. Son pruebas locales controladas,
+  no solicitudes al proveedor. Los fakes verifican estados, delegación, cancelación,
+  duplicados, respuestas obsoletas, filtros, búsqueda y prioridad de eliminación.
+- Emulador real: PATCH `/posts/2` con `{"title":"Título actualizado desde MuroCampus"}`
+  → **200**, Post con `id=2`, `userId=1` y body original. Cinco comentarios
+  conservados; búsqueda del título nuevo, filtros, recarga/detalle y DELETE de id 1
+  funcionando en la misma sesión. Error offline conserva formulario y reintento
+  conectado exitoso. Rotación real sin PATCH automático. Ajustes restaurados.
+- [Formulario](evidencias/con-ia/editar-formulario.png) y
+  [éxito](evidencias/con-ia/editar-exito.png); logs/JSON/capturas complementarias externos.
+
+### Para sustentación y revisión personal
+
+PATCH modifica parcialmente, por eso EditarPost solo contiene title; PUT sería una
+sustitución completa. Repository abstrae Retrofit y las excepciones HTTP. El mapa
+de sesión permite seguir viendo el resultado simulado de JSONPlaceholder, pero no
+demuestra persistencia remota. La exclusión por eliminación se aplica antes de las
+actualizaciones. Las guardas de versión/cancelación evitan resultados de pantallas
+obsoletas y los estados de cada escritura son independientes.
+
+No se inventaron prompts adicionales ni decisiones del estudiante. El estudiante
+debe revisar personalmente las tres mejoras, pruebas, limitaciones y explicación
+técnica antes de la entrega; este registro no certifica que ya lo haya hecho.

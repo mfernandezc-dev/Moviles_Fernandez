@@ -32,7 +32,7 @@ import com.fernandez.murocampus.viewmodel.PostsViewModel
 import com.fernandez.murocampus.viewmodel.UiState
 
 @Composable
-fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier = Modifier) {
+fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier = Modifier, onEditar: () -> Unit = {}) {
     val estado by vm.detalle.collectAsStateWithLifecycle()
     val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
     var confirmar by rememberSaveable(idSeleccionado) { mutableStateOf(false) }
@@ -95,6 +95,9 @@ fun PantallaDetalle(vm: PostsViewModel, idSeleccionado: Int, modifier: Modifier 
                 }
                 item(key = "eliminar") {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = onEditar, enabled = !eliminando, modifier = Modifier.fillMaxWidth()) {
+                            Text("Editar publicación")
+                        }
                         Button(
                             onClick = { confirmar = true }, enabled = !eliminando,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB3261E)),

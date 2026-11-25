@@ -131,6 +131,7 @@ class BusquedaViewModelTest {
     private fun datos(vm: PostsViewModel) = (vm.resultados.value as UiState.Exito).datos
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Result<Post> = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         var llamadasLista = 0
         val usuarios = mutableListOf<Int>()

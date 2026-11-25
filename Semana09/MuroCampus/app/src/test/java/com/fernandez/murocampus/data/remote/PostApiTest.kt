@@ -22,6 +22,8 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.DELETE
 import retrofit2.Response
+import retrofit2.http.PATCH
+import com.fernandez.murocampus.model.EditarPost
 
 class PostApiTest {
     private val metodos = PostApi::class.java.declaredMethods.toList()
@@ -33,9 +35,9 @@ class PostApiTest {
 
     @Test
     fun exponeExactamenteLasCincoFuncionesObligatorias() {
-        assertEquals(6, metodos.size)
+        assertEquals(7, metodos.size)
         assertEquals(
-            setOf("listar", "detalle", "comentarios", "porUsuario", "crear", "eliminar"),
+            setOf("listar", "detalle", "comentarios", "porUsuario", "crear", "eliminar", "editar"),
             metodos.map { it.name }.toSet()
         )
     }
@@ -96,7 +98,8 @@ class PostApiTest {
             val rutas = listOfNotNull(
                 metodo.getAnnotation(GET::class.java)?.value,
                 metodo.getAnnotation(POST::class.java)?.value,
-                metodo.getAnnotation(DELETE::class.java)?.value
+                metodo.getAnnotation(DELETE::class.java)?.value,
+                metodo.getAnnotation(PATCH::class.java)?.value
             )
 
             assertEquals("${metodo.name} debe tener una operacion HTTP", 1, rutas.size)
@@ -143,6 +146,16 @@ class PostApiTest {
         val respuesta = retornoSuspend("eliminar") as ParameterizedType
         assertEquals(Response::class.java, respuesta.rawType)
         assertEquals(Unit::class.java, sinComodin(respuesta.actualTypeArguments.single()))
+        assertEquals(listOf(Int::class.javaPrimitiveType, EditarPost::class.java, Continuation::class.java), metodo("editar").parameterTypes.toList())
+        assertEquals(Post::class.java, retornoSuspend("editar"))
+    }
+
+    @Test fun editarUsaPatchConPathYBody() {
+        val metodo = metodo("editar")
+        assertEquals("posts/{id}", metodo.getAnnotation(PATCH::class.java)!!.value)
+        assertEquals("id", anotacionParametro<Path>("editar").value)
+        assertEquals(1, metodo.parameterAnnotations[1].size)
+        assertTrue(metodo.parameterAnnotations[1].single() is Body)
     }
 
     @Test fun eliminarUsaDeleteConPathId() {

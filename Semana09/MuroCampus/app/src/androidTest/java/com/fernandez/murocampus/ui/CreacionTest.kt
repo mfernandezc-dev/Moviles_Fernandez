@@ -212,6 +212,7 @@ class CreacionTest {
     }
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Result<Post> = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         val enviados = mutableListOf<NuevoPost>()
         val usuarios = mutableListOf<Int>()

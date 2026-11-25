@@ -38,6 +38,7 @@ import com.fernandez.murocampus.data.remote.RetrofitClient
 import com.fernandez.murocampus.ui.PantallaLista
 import com.fernandez.murocampus.ui.PantallaDetalle
 import com.fernandez.murocampus.ui.PantallaCrear
+import com.fernandez.murocampus.ui.PantallaEditar
 import com.fernandez.murocampus.ui.theme.MuroCampusTheme
 import com.fernandez.murocampus.viewmodel.PostsViewModel
 import com.fernandez.murocampus.viewmodel.PostsViewModelFactory
@@ -70,16 +71,21 @@ class MainActivity : ComponentActivity() {
 internal fun PantallaInicio(vm: PostsViewModel) {
     var idSeleccionado by rememberSaveable { mutableStateOf<Int?>(null) }
     var creando by rememberSaveable { mutableStateOf(false) }
+    var editando by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val eliminacion by vm.eliminacion.collectAsStateWithLifecycle()
     LaunchedEffect(eliminacion) {
         if (eliminacion is UiState.Exito && idSeleccionado != null) {
             vm.cerrarDetalle()
+            editando = false
             idSeleccionado = null
         }
     }
     BackHandler(enabled = idSeleccionado != null || creando) {
-        if (creando) {
+        if (editando) {
+            vm.cerrarEdicion()
+            editando = false
+        } else if (creando) {
             vm.cerrarCreacion()
             creando = false
         } else {
@@ -123,7 +129,9 @@ internal fun PantallaInicio(vm: PostsViewModel) {
     ) { innerPadding ->
         val contenido = Modifier.fillMaxSize().padding(innerPadding)
         val id = idSeleccionado
-        if (creando) {
+        if (editando && id != null) {
+            PantallaEditar(vm, id, contenido, onVolver = { vm.cerrarEdicion(); editando = false })
+        } else if (creando) {
             PantallaCrear(vm = vm, modifier = contenido)
         } else if (id == null) {
             PantallaLista(
@@ -136,7 +144,10 @@ internal fun PantallaInicio(vm: PostsViewModel) {
                 }
             )
         } else {
-            PantallaDetalle(vm = vm, idSeleccionado = id, modifier = contenido)
+            PantallaDetalle(vm = vm, idSeleccionado = id, modifier = contenido, onEditar = {
+                vm.prepararEdicion()
+                editando = true
+            })
         }
     }
 }

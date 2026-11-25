@@ -10,8 +10,13 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.Response
 import retrofit2.http.DELETE
+import retrofit2.http.PATCH
+import com.fernandez.murocampus.model.EditarPost
 
 interface PostApi {
+
+    @PATCH("posts/{id}")
+    suspend fun editar(@Path("id") id: Int, @Body cambios: EditarPost): Post
 
     @DELETE("posts/{id}")
     suspend fun eliminar(@Path("id") id: Int): Response<Unit>

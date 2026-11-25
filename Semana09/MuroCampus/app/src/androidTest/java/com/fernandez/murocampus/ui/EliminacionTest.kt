@@ -63,6 +63,7 @@ class EliminacionTest {
         compose.runOnIdle { assertEquals(1, repo.llamadas) }
     }
     private class Falso : PostRepository {
+        override suspend fun editar(id: Int, cambios: EditarPost): Result<Post> = error("Llamada inesperada a editar")
         val posts = listOf(Post(1, 1, "Título original", "Contenido"), Post(1, 2, "Otro título", "Contenido"))
         var llamadas = 0
         var respuesta: suspend () -> Result<Unit> = { Result.success(Unit) }

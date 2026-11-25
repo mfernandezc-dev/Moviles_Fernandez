@@ -7,6 +7,7 @@ import com.fernandez.murocampus.data.mensajeDe
 import com.fernandez.murocampus.model.Comentario
 import com.fernandez.murocampus.model.NuevoPost
 import com.fernandez.murocampus.model.Post
+import com.fernandez.murocampus.model.EditarPost
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -54,6 +55,11 @@ class PostsViewModel(
     val eliminacion = _eliminacion.asStateFlow()
     private var cargaEliminacion: Job? = null
     private var versionEliminacion = 0L
+    private val actualizados = mutableMapOf<Int, Post>()
+    private val _edicion = MutableStateFlow<UiState<Post>?>(null)
+    val edicion = _edicion.asStateFlow()
+    private var cargaEdicion: Job? = null
+    private var versionEdicion = 0L
 
     private val _creacion = MutableStateFlow<UiState<Post>?>(null)
     val creacion = _creacion.asStateFlow()
@@ -80,7 +86,7 @@ class PostsViewModel(
             if (version != versionLista) return@launch
             resultado
                 .onSuccess { posts ->
-                    _lista.value = UiState.Exito(excluirEliminados(posts))
+                    _lista.value = UiState.Exito(aplicarSesion(posts))
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
@@ -100,6 +106,10 @@ class PostsViewModel(
     fun abrir(id: Int) {
         cerrarDetalle()
         _eliminacion.value = null
+        if (id in eliminados) {
+            _detalle.value = UiState.Error("Esta publicación fue eliminada durante la sesión.")
+            return
+        }
         val version = versionDetalle
         _detalle.value = UiState.Cargando
         cargaDetalle = viewModelScope.launch {
@@ -107,7 +117,8 @@ class PostsViewModel(
                 val datos = coroutineScope {
                     val post = async { repo.detalle(id).getOrThrow() }
                     val comentarios = async { repo.comentarios(id).getOrThrow() }
-                    DetalleUi(post.await(), comentarios.await())
+                    val recibido = post.await()
+                    DetalleUi(actualizados[id] ?: recibido, comentarios.await())
                 }
                 ensureActive()
                 if (version == versionDetalle) _detalle.value = UiState.Exito(datos)
@@ -121,6 +132,7 @@ class PostsViewModel(
     }
 
     fun cerrarDetalle() {
+        cerrarEdicion()
         versionEliminacion++
         cargaEliminacion?.cancel()
         cargaEliminacion = null
@@ -131,6 +143,56 @@ class PostsViewModel(
 
     private fun excluirEliminados(posts: List<Post>): List<Post> =
         if (eliminados.isEmpty()) posts else posts.filterNot { it.id in eliminados }
+
+    private fun aplicarSesion(posts: List<Post>): List<Post> {
+        val visibles = excluirEliminados(posts)
+        return if (actualizados.isEmpty()) visibles else visibles.map { actualizados[it.id] ?: it }
+    }
+
+    fun prepararEdicion() {
+        cerrarEdicion()
+        _edicion.value = null
+    }
+
+    fun cerrarEdicion() {
+        versionEdicion++
+        cargaEdicion?.cancel()
+        cargaEdicion = null
+    }
+
+    fun editar(id: Int, titulo: String) {
+        val actual = (_detalle.value as? UiState.Exito)?.datos ?: return
+        val limpio = titulo.trim()
+        if (actual.post.id != id || limpio.isEmpty() || limpio == actual.post.title ||
+            id in eliminados || cargaEdicion?.isActive == true || cargaEliminacion?.isActive == true) return
+        val version = ++versionEdicion
+        _edicion.value = UiState.Cargando
+        cargaEdicion = viewModelScope.launch {
+            try {
+                val resultado = repo.editar(id, EditarPost(limpio))
+                ensureActive()
+                if (version != versionEdicion || id in eliminados) return@launch
+                resultado.onSuccess { post ->
+                    actualizados[id] = post
+                    val listaActual = _lista.value
+                    if (listaActual is UiState.Exito) _lista.value = UiState.Exito(aplicarSesion(listaActual.datos))
+                    val detalleActual = _detalle.value
+                    if (detalleActual is UiState.Exito && detalleActual.datos.post.id == id) {
+                        _detalle.value = UiState.Exito(detalleActual.datos.copy(post = post))
+                    }
+                    _edicion.value = UiState.Exito(post)
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _edicion.value = UiState.Error(mensajeDe(error))
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ensureActive()
+                if (version == versionEdicion) _edicion.value = UiState.Error(mensajeDe(e))
+            }
+        }
+    }
 
     fun eliminar(id: Int) {
         val actual = (_detalle.value as? UiState.Exito)?.datos ?: return
@@ -144,6 +206,8 @@ class PostsViewModel(
                 if (version != versionEliminacion) return@launch
                 resultado.onSuccess {
                     eliminados += id
+                    actualizados.remove(id)
+                    cerrarEdicion()
                     val listaActual = _lista.value
                     if (listaActual is UiState.Exito) _lista.value = UiState.Exito(excluirEliminados(listaActual.datos))
                     _eliminacion.value = UiState.Exito(Unit)

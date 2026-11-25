@@ -82,6 +82,7 @@ class EliminacionViewModelTest {
         val vm = vm(); runCurrent(); vm.eliminar(2); runCurrent(); assertTrue(repo.ids.isEmpty())
     }
     private inner class Falso : PostRepository {
+        override suspend fun editar(id: Int, cambios: EditarPost): Result<Post> = error("Llamada inesperada a editar")
         val ids = mutableListOf<Int>()
         var respuesta: suspend () -> Result<Unit> = { Result.success(Unit) }
         var lista: suspend () -> Result<List<Post>> = { Result.success(posts) }

@@ -286,6 +286,7 @@ class PostRepositoryTest {
     private data class Llamada(val metodo: String, val parametro: Any? = null)
 
     private inner class PostApiFalsa : PostApi {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Post = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): retrofit2.Response<Unit> = error("Llamada inesperada a eliminar")
         var publicaciones = listOf(post, otroPost)
         var publicacion = post

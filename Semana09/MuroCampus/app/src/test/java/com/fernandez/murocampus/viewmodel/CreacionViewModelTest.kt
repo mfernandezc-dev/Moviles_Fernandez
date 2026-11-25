@@ -316,6 +316,7 @@ class CreacionViewModelTest {
     private fun http(codigo: Int) = HttpException(Response.error<Post>(codigo, "{}".toResponseBody("application/json".toMediaType())))
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Result<Post> = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         val enviados = mutableListOf<NuevoPost>()
         var gets = 0

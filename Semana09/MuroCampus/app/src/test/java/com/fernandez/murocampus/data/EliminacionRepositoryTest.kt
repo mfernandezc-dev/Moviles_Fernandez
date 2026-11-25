@@ -14,6 +14,7 @@ import retrofit2.Response
 class EliminacionRepositoryTest {
     private fun repo(bloque: (Int) -> Response<Unit>) = PostRepositoryRemote(
         object : PostApi {
+            override suspend fun editar(id: Int, cambios: EditarPost): Post = error("Llamada inesperada a editar")
             override suspend fun listar(): List<Post> = error("Llamada inesperada a listar")
             override suspend fun detalle(id: Int): Post = error("Llamada inesperada a detalle")
             override suspend fun comentarios(id: Int): List<Comentario> = error("Llamada inesperada a comentarios")

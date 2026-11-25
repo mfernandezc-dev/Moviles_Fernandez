@@ -6,6 +6,7 @@ import com.fernandez.murocampus.model.NuevoPost
 import com.fernandez.murocampus.model.Post
 import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
+import com.fernandez.murocampus.model.EditarPost
 
 interface PostRepository {
 
@@ -20,11 +21,16 @@ interface PostRepository {
     suspend fun crear(nuevo: NuevoPost): Result<Post>
 
     suspend fun eliminar(id: Int): Result<Unit>
+
+    suspend fun editar(id: Int, cambios: EditarPost): Result<Post>
 }
 
 class PostRepositoryRemote(
     private val api: PostApi
 ) : PostRepository {
+
+    override suspend fun editar(id: Int, cambios: EditarPost): Result<Post> =
+        llamar { api.editar(id, cambios) }
 
     override suspend fun eliminar(id: Int): Result<Unit> = llamar {
         val respuesta = api.eliminar(id)

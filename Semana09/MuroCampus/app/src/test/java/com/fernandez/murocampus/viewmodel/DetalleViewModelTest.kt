@@ -263,6 +263,7 @@ class DetalleViewModelTest {
     }
 
     private inner class RepositoryFalso : PostRepository {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Result<Post> = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         var llamadasLista = 0
         val idsPost = mutableListOf<Int>()

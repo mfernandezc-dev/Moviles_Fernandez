@@ -410,3 +410,141 @@ Durante el desarrollo se detectó `544e1ca5ce1cfdca742510b34dffba2d590c4ea8`
 sus secciones finales de Fase 1; fuente, pruebas y dependencias permanecen iguales.
 El usuario autorizó continuar sin integrarlo ni sincronizar ambas referencias.
 No se modificó ni publicó `main`; `con-ia` conserva la documentación base original.
+
+## C. Editar títulos con PATCH
+
+`EditarPost(val title: String)` es serializable y representa únicamente el campo
+modificado. `@PATCH("posts/{id}")` recibe `@Path id`, `@Body EditarPost` y devuelve
+`Post`. Repository retorna `Result<Post>` mediante su mismo manejo de excepciones
+y cancelación. No se envían id, userId ni body en el JSON de actualización.
+
+`PantallaEditar.kt` muestra título precargado y contenido original. Usa
+`rememberSaveable(id)` para el borrador y `collectAsStateWithLifecycle` para los
+estados. Guardar se deshabilita con título vacío, sin cambios o solicitud pendiente;
+no se envía PATCH al escribir o rotar. Un error conserva lo escrito y permite
+reintento; el éxito muestra confirmación verde y permite volver al detalle.
+
+El ViewModel tiene estado/Job/versión independientes para edición, valida también
+el título y evita duplicados. Utiliza **el Post devuelto**, actualiza lista y detalle
+sin perder comentarios, consulta ni filtro. Un mapa por ID aplica esas respuestas a
+cargas y detalles posteriores durante la sesión; los IDs eliminados tienen prioridad
+y una eliminación exitosa cancela una edición pendiente. Volver al detalle desde
+el formulario no vuelve a descargar lista ni comentarios.
+
+### HTTP real comprobado desde MuroCampus
+
+```http
+PATCH https://jsonplaceholder.typicode.com/posts/2
+Content-Type: application/json; charset=utf-8
+```
+
+```json
+{"title":"Título actualizado desde MuroCampus"}
+```
+
+Logcat registró **HTTP 200** y un Post con `id=2`, `userId=1`, ese título y el
+`body` original íntegro. Se verificaron los cinco comentarios, detalle, búsqueda
+por `actualizado`, filtros y recarga dentro de la sesión. En la misma ejecución se
+eliminó id 1 y el título editado de id 2 siguió disponible. Un intento offline
+conservó el borrador; el reintento conectado produjo el éxito documentado. La
+rotación real conservó el título sin PATCH automático. Se restauraron ajustes.
+
+![Formulario real de edición](evidencias/con-ia/editar-formulario.png)
+![Edición real exitosa](evidencias/con-ia/editar-exito.png)
+
+JSONPlaceholder **no persiste permanentemente PATCH ni DELETE**. Estas estructuras
+de sesión son memoria local, no almacenamiento definitivo. No sobreviven a la
+muerte del proceso. Las respuestas reales se contrastaron con Logcat de la app;
+no se sustituyeron por curl ni por resultados fijados en producción.
+
+## Arquitectura y contrato finales
+
+```text
+Compose → PostsViewModel (StateFlow, viewModelScope)
+       → PostRepository (Result) → PostApi (Retrofit) → JSONPlaceholder
+
+model/Modelos.kt                Post, Comentario, NuevoPost, Usuario, EditarPost
+data/PostRepository.kt          siete operaciones y manejo de errores/cancelación
+data/remote/PostApi.kt          cuatro GET + POST + DELETE + PATCH
+viewmodel/PostsViewModel.kt     lista, resultados/busqueda, detalle, creacion,
+                               eliminacion, edicion; exclusiones/actualizaciones
+ui/PantallaLista.kt             búsqueda + chips + tarjetas
+ui/PantallaDetalle.kt           publicación/comentarios + Editar/Eliminar
+ui/PantallaCrear.kt             creación original
+ui/PantallaEditar.kt            formulario PATCH
+evidencias/con-ia/              cinco capturas reales de Fase 2
+```
+
+| Operación | Método y ruta | Resultado Repository |
+| --- | --- | --- |
+| listar | GET posts | Result de lista Post |
+| detalle | GET posts/{id} | Result de Post |
+| comentarios | GET posts/{id}/comments | Result de lista Comentario |
+| porUsuario | GET posts?userId=… | Result de lista Post |
+| crear | POST posts | Result de Post |
+| eliminar | DELETE posts/{id} | Result de Unit (Response verificada en datos) |
+| editar | PATCH posts/{id} | Result de Post (Body EditarPost) |
+
+ViewModel sin Retrofit, PostApi, HttpException, Context ni GlobalScope; pantallas
+sin acceso directo a Repository/API. Sin llamadas bloqueantes de UI ni cambios de
+TLS, versiones o dependencias. Los jobs tienen cancelación/guardas de obsolescencia.
+MainActivity conserva una sola Activity y navegación saveable lista/detalle/crear/editar.
+
+## Pruebas finales de Fase 2
+
+| Momento | Unitarias | Instrumentadas | Total sin repetir ejecuciones |
+| --- | ---: | ---: | ---: |
+| Base | 163 | 40 | 203 |
+| Búsqueda | 179 | 46 | 225 |
+| DELETE | 200 | 50 | 250 |
+| PATCH/final | **228** | **57** | **285** |
+
+Nuevas respecto a base: **65 unitarias + 17 instrumentadas = 82**. El tercer
+avance añade 28 unitarias y 7 instrumentadas. Cero fallos, errores u omitidas en
+los resultados finales; se conservaron todas las pruebas anteriores y las
+comprobaciones de las operaciones originales. El test de cantidad de operaciones
+conserva su nombre histórico, pero su expectativa final es de siete operaciones.
+
+Se ejecutaron assembleDebug, testDebugUnitTest, lintDebug, la repetición unitaria
+`--offline --rerun-tasks` y connectedDebugAndroidTest en Medium_Phone API 37.
+BUILD SUCCESSFUL; lint: **24 advertencias y cero errores**. Las pruebas controladas
+incluyen fakes explícitos y tráfico HTTP local a un servidor JVM para PATCH/DELETE;
+ese transporte usa Retrofit y serialización reales sin internet. No es evidencia
+de persistencia del proveedor. Las pruebas reales del emulador están separadas de
+esas pruebas controladas. XML, Logcat y JSON completos permanecen fuera del repositorio.
+
+## Historial final y comparación de ramas
+
+| Avance | Mensaje exacto | Referencia |
+| --- | --- | --- |
+| 1 | feat(busqueda): agrega busqueda de publicaciones por titulo | `6ea77eb9bc7c933844601e3aa70fb267054dc5d3` |
+| 2 | feat(eliminar): permite eliminar publicaciones con DELETE | `a4f187671e7782895284eabb88c62832985d8ca6` |
+| 3 | feat(editar): permite editar publicaciones con PATCH | commit que contiene esta sección; consultar Git |
+
+`main` local representa Fase 1, sin buscador, DELETE, PATCH, PantallaEditar ni PROMPTS.
+`con-ia` añade exactamente las tres mejoras, pruebas, documentación y cinco capturas;
+las cinco evidencias originales y todo el contenido académico de Fase 1 se mantienen.
+Las diferencias preexistentes de otros laboratorios entre ramas no se fusionaron.
+Su integridad se compara contra la línea base de cada rama, no entre ramas.
+
+Para repetir la comparación con el proyecto limpio y sin cambios preparados:
+
+```powershell
+# Desde la raíz del repositorio; no ejecutar pull ni forzar checkout.
+git checkout main
+# Desde Semana09/MuroCampus:
+.\gradlew.bat :app:assembleDebug
+# Instalar app/build/outputs/apk/debug/app-debug.apk y abrir MuroCampus.
+# Desde la raíz:
+git checkout con-ia
+# Desde Semana09/MuroCampus, recompilar e instalar la APK de esta rama.
+.\gradlew.bat :app:assembleDebug
+```
+
+La comprobación de cierre se realiza después del tercer push, con capturas externas
+`comparacion-main.png` y `comparacion-con-ia.png`, sin cuarto commit documental.
+Su resultado, hashes finales e integridad se informan al usuario al terminar.
+
+- [Fase 2 en GitHub](https://github.com/mfernandezc-dev/Moviles_Fernandez/tree/con-ia/Semana09/MuroCampus)
+- [Fase 1 en main remota](https://github.com/mfernandezc-dev/Moviles_Fernandez/tree/main/Semana09/MuroCampus)
+- [Registro transparente de prompts y revisión pendiente del estudiante](PROMPTS.md)

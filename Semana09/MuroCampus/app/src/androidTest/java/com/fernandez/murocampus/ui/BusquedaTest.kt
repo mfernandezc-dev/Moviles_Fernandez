@@ -98,6 +98,7 @@ class BusquedaTest {
         compose.setContent { MuroCampusTheme { PantallaInicio(vm) } }
     }
     private class RepositoryFalso : PostRepository {
+        override suspend fun editar(id: Int, cambios: com.fernandez.murocampus.model.EditarPost): Result<Post> = error("Llamada inesperada a editar")
         override suspend fun eliminar(id: Int): Result<Unit> = error("Llamada inesperada a eliminar")
         val posts = listOf(Post(1, 1, "Qui campus", "Texto"), Post(2, 11, "Aliquid nuevo", "Texto"), Post(2, 12, "Otro título", "qui"))
         var llamadasLista = 0

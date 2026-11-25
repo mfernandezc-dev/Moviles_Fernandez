@@ -32,3 +32,6 @@ data class Usuario(
     val name: String,
     val email: String
 )
+
+@Serializable
+data class EditarPost(val title: String)
