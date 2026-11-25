@@ -14,6 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import com.fernandez.avisoscampus.viewmodel.AvisosViewModel
 import com.fernandez.avisoscampus.notificacion.Notificador
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.fernandez.avisoscampus.model.PermisoUi
 
 private val Azul = Color(0xFF17659C)
 
@@ -22,6 +27,20 @@ private val Azul = Color(0xFF17659C)
 fun PantallaAvisos(vm: AvisosViewModel) {
 
     val contexto = LocalContext.current
+
+    val permiso by vm.permiso.collectAsState()
+
+    val lanzador = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        vm.permisoRespondido(concedido)
+    }
+
+    LaunchedEffect(Unit) {
+        if (Notificador.tienePermiso(contexto)) {
+            vm.permisoRespondido(true)
+        }
+    }
 
     LaunchedEffect(Unit) {
         vm.eventos.collect { aviso ->
@@ -59,29 +78,51 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 Arrangement.spacedBy(12.dp)
         ) {
 
+
             Tarjeta("Permiso de notificaciones") {
 
+                val textoEstado = when (permiso) {
+                    PermisoUi.SinPedir -> "Sin pedir"
+                    PermisoUi.Concedido -> "Permitido"
+                    PermisoUi.Denegado -> "Denegado"
+                }
+
+                val colorEstado = when (permiso) {
+                    PermisoUi.SinPedir -> Color.Gray
+                    PermisoUi.Concedido -> Color(0xFF2E7D32)
+                    PermisoUi.Denegado -> Color(0xFFC62828)
+                }
+
                 Row(
-                    verticalAlignment =
-                        Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Estado: ")
 
                     Text(
-                        "Sin pedir",
-                        color = Color.Gray,
+                        text = textoEstado,
+                        color = colorEstado,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Button(
                     onClick = {
-                        // TODO Paso 2
+                        if (
+                            Build.VERSION.SDK_INT >=
+                            Build.VERSION_CODES.TIRAMISU
+                        ) {
+                            lanzador.launch(
+                                Manifest.permission.POST_NOTIFICATIONS
+                            )
+                        } else {
+                            vm.permisoRespondido(true)
+                        }
                     }
                 ) {
                     Text("Permitir notificaciones")
                 }
             }
+
 
             Tarjeta("Avisos") {
 
