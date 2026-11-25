@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,8 +17,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModelProvider
+import com.fernandez.murocampus.data.PostRepositoryRemote
+import com.fernandez.murocampus.data.remote.RetrofitClient
+import com.fernandez.murocampus.ui.PantallaLista
 import com.fernandez.murocampus.ui.theme.MuroCampusTheme
+import com.fernandez.murocampus.viewmodel.PostsViewModel
+import com.fernandez.murocampus.viewmodel.PostsViewModelFactory
 import android.graphics.Color as AndroidColor
 
 class MainActivity : ComponentActivity() {
@@ -32,9 +36,13 @@ class MainActivity : ComponentActivity() {
                 AndroidColor.TRANSPARENT
             )
         )
+        val repository = PostRepositoryRemote(RetrofitClient.api)
+        val factory = PostsViewModelFactory(repository)
+        val vm = ViewModelProvider(this, factory)[PostsViewModel::class.java]
+
         setContent {
             MuroCampusTheme {
-                PantallaInicio()
+                PantallaInicio(vm)
             }
         }
     }
@@ -42,7 +50,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun PantallaInicio() {
+private fun PantallaInicio(vm: PostsViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
@@ -61,18 +69,11 @@ private fun PantallaInicio() {
             )
         }
     ) { innerPadding ->
-        Spacer(
+        PantallaLista(
+            vm = vm,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun PantallaInicioPreview() {
-    MuroCampusTheme {
-        PantallaInicio()
     }
 }
